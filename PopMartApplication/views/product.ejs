@@ -1,0 +1,89 @@
+<%- include("partials/header", { title: "Product Details" }) %>
+
+<div class="card">
+  <div class="row" style="align-items:flex-start;">
+    <div style="flex:1; min-width:260px;">
+      <img class="img" style="height:260px;" src="<%= product.image %>" alt="image"/>
+    </div>
+
+    <div style="flex:2; min-width:280px;">
+      <h2 style="margin-top:0;"><%= product.name %></h2>
+      <div class="row">
+        <span class="pill"><%= product.category %></span>
+        <span class="pill">Seller: <%= product.sellerName %></span>
+        <span class="pill">Seller Wallet: <span class="mono"><%= product.sellerWallet %></span></span>
+      </div>
+
+      <p style="margin:12px 0;"><%= product.fullDesc %></p>
+
+      <p><b>Price:</b> <span class="mono" id="priceEth"><%= product.priceEth %></span> ETH</p>
+
+      <hr style="border:none; border-top:1px solid #e5e7eb; margin:14px 0;"/>
+
+      <h3>Purchase (Escrow Payment)</h3>
+      <p class="muted">
+        When you buy, the payment goes into escrow. After delivery is confirmed, payment is released to seller.
+      </p>
+
+      <button class="btn" id="btnBuy" data-seller="<%= product.sellerWallet %>" data-price="<%= product.priceEth %>">
+        Buy with MetaMask
+      </button>
+
+      <p class="muted" id="buyStatus" style="margin-top:10px;"></p>
+
+      <div class="row" style="margin-top:10px;">
+        <label>Order ID:</label>
+        <input id="orderId" type="number" min="0" style="padding:8px; border-radius:10px; border:1px solid #e5e7eb; width:120px;">
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <button class="btn btn2" id="btnShip">Seller: Confirm Shipment</button>
+        <button class="btn" id="btnDeliver">Buyer: Confirm Delivery</button>
+      </div>
+
+      <p class="muted" id="shipStatus" style="margin-top:10px;"></p>
+      <p class="muted" id="deliverStatus" style="margin-top:6px;"></p>
+
+      <p class="muted" id="orderStatus" style="margin-top:6px;"></p>
+
+      <hr style="border:none; border-top:1px solid #e5e7eb; margin:14px 0;"/>
+
+      <h3>Rate Seller (After Successful Purchase)</h3>
+      <p class="muted">
+        Rating is only allowed after payment is released (prevents fake reviews).
+      </p>
+
+      <div class="row">
+        <label>Stars (1-5):</label>
+        <input id="stars" type="number" min="1" max="5" value="5" style="padding:8px; border-radius:10px; border:1px solid #e5e7eb; width:90px;">
+      </div>
+
+      <div style="margin-top:10px;">
+        <label>Comment:</label><br/>
+        <textarea id="comment" rows="3" style="width:100%; padding:10px; border-radius:10px; border:1px solid #e5e7eb;"></textarea>
+      </div>
+
+      <button class="btn btn2" style="margin-top:10px;" id="btnRate">
+        Submit Rating
+      </button>
+
+      <p class="muted" id="rateStatus" style="margin-top:10px;"></p>
+    </div>
+  </div>
+</div>
+
+<br/>
+
+<div class="card">
+  <h3>Seller Rating Snapshot</h3>
+  <p class="muted">
+    Average rating shown as "x.xx / 5". (Example: 4.25)
+  </p>
+  <p><b>Average:</b> <span class="mono" id="avgRating">Loading...</span></p>
+  <p><b>Total Ratings:</b> <span class="mono" id="ratingCount">Loading...</span></p>
+</div>
+
+<%- include("partials/footer", { script: [
+  "https://cdn.jsdelivr.net/npm/web3@4.16.0/dist/web3.min.js",
+  "/js/productPage.js"
+] }) %>

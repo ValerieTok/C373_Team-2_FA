@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title><%= title %></title>
+
+  <!-- Simple styling (you can move to public/styles.css later) -->
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f6f7fb; }
+    .nav { background: #111827; padding: 14px 18px; display: flex; gap: 14px; align-items: center; }
+    .nav a { color: white; text-decoration: none; font-weight: 600; }
+    .nav a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 20px auto; padding: 0 16px; }
+    .card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .img { width: 100%; height: 160px; object-fit: cover; border-radius: 10px; background: #e5e7eb; }
+    .btn { background: #2563eb; border: none; color: white; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-weight: 700; }
+    .btn:disabled { background: #93c5fd; cursor: not-allowed; }
+    .btn2 { background: #111827; }
+    .pill { display:inline-block; background:#e5e7eb; padding:4px 10px; border-radius:999px; font-size:12px; }
+    .row { display:flex; gap:14px; align-items:center; flex-wrap: wrap; }
+    .muted { color:#6b7280; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    .alert { background:#fff7ed; border:1px solid #fed7aa; padding:10px 12px; border-radius:10px; }
+    @media (max-width: 900px){ .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <a href="/">Home</a>
+    <a href="/about">About Us</a>
+    <a href="/myOrders">My Orders</a>
+    <span style="flex:1"></span>
+    <button class="btn btn2" id="btnConnect">Connect MetaMask</button>
+  </div>
+
+  <div class="container">

@@ -1,0 +1,26 @@
+<%- include("partials/header", { title: "About Us" }) %>
+
+<div class="card">
+  <h2>About Us</h2>
+  <p>
+    We are building a blockchain-based marketplace that solves common e-commerce issues like
+    delayed payments, payment disputes, and fake reviews.
+  </p>
+
+  <h3>Why Blockchain?</h3>
+  <ul>
+    <li><b>Escrow Payment Automation:</b> Payment is locked in a smart contract and released only when conditions are met.</li>
+    <li><b>Transparent Audit Trail:</b> Transactions are recorded on-chain and can be verified.</li>
+    <li><b>Trusted Seller Reputation:</b> Ratings are allowed only after a verified purchase to reduce fake reviews.</li>
+  </ul>
+
+  <h3>How Our System Works</h3>
+  <ol>
+    <li>Buyer chooses a product and pays using MetaMask.</li>
+    <li>Smart contract holds payment in escrow.</li>
+    <li>Buyer confirms delivery → smart contract releases payment to seller.</li>
+    <li>Buyer rates seller → rating is stored on blockchain and cannot be edited.</li>
+  </ol>
+</div>
+
+<%- include("partials/footer", { script: "" }) %>

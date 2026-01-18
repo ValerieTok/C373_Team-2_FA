@@ -1,0 +1,46 @@
+  </div>
+
+  <script>
+    // Basic MetaMask connect (front-end only)
+    function chainName(chainId) {
+      const map = {
+        "0x1": "Ethereum Mainnet",
+        "0xaa36a7": "Sepolia",
+        "0x5": "Goerli",
+        "0x539": "Localhost 1337",
+        "0x7a69": "Localhost 31337",
+      };
+      return map[chainId] || chainId;
+    }
+
+    async function connectWallet() {
+      if (!window.ethereum) {
+        alert("MetaMask not found. Please install MetaMask.");
+        return;
+      }
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      if (accounts && accounts.length) {
+        const wallet = accounts[0];
+        const chainId = await window.ethereum.request({ method: "eth_chainId" });
+        const network = chainName(chainId);
+        document.getElementById("btnConnect").textContent = `${wallet} (${network})`;
+      }
+    }
+
+    const btn = document.getElementById("btnConnect");
+    if (btn) {
+      btn.addEventListener("click", connectWallet);
+    }
+
+  </script>
+
+  <!-- Page-specific script(s) -->
+  <% if (Array.isArray(script)) { %>
+    <% script.forEach(function (src) { %>
+      <script src="<%= src %>"></script>
+    <% }) %>
+  <% } else if (script) { %>
+    <script src="<%= script %>"></script>
+  <% } %>
+</body>
+</html>
