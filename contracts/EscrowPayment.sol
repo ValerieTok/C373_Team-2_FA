@@ -23,6 +23,7 @@ contract EscrowPayment {
         address buyer;
         address seller;
         uint256 amount;     // ETH in wei
+        bool shipped;
         bool delivered;
         bool paidOut;
         bool rated;
@@ -34,6 +35,7 @@ contract EscrowPayment {
     ISellerReputation public reputation;
 
     event OrderCreated(uint256 indexed orderId, address indexed buyer, address indexed seller, uint256 amount);
+    event ShipmentConfirmed(uint256 indexed orderId, address indexed seller);
     event DeliveryConfirmed(uint256 indexed orderId, address indexed buyer);
     event PaymentReleased(uint256 indexed orderId, address indexed seller, uint256 amount);
     event RatingSubmitted(uint256 indexed orderId, address indexed seller, address indexed buyer, uint8 stars);
@@ -55,6 +57,7 @@ contract EscrowPayment {
             buyer: msg.sender,
             seller: seller,
             amount: msg.value,
+            shipped: false,
             delivered: false,
             paidOut: false,
             rated: false
@@ -63,10 +66,23 @@ contract EscrowPayment {
         emit OrderCreated(orderId, msg.sender, seller, msg.value);
     }
 
-    // 2) Buyer confirms delivery
+    // 2) Seller confirms shipment
+    function confirmShipment(uint256 orderId) external {
+        Order storage o = orders[orderId];
+        require(o.seller == msg.sender, "Only seller can confirm");
+        require(o.amount > 0, "Order not found");
+        require(!o.shipped, "Already shipped");
+        require(!o.paidOut, "Already paid");
+
+        o.shipped = true;
+        emit ShipmentConfirmed(orderId, msg.sender);
+    }
+
+    // 3) Buyer confirms delivery
     function confirmDelivery(uint256 orderId) external {
         Order storage o = orders[orderId];
         require(o.buyer == msg.sender, "Only buyer can confirm");
+        require(o.shipped, "Not shipped yet");
         require(!o.delivered, "Already confirmed");
         require(!o.paidOut, "Already paid");
 
@@ -74,10 +90,11 @@ contract EscrowPayment {
         emit DeliveryConfirmed(orderId, msg.sender);
     }
 
-    // 3) Release payment to seller (can be triggered by buyer or seller after delivery confirmed)
+    // 4) Release payment to seller (can be triggered by buyer or seller after delivery confirmed)
     function releasePayment(uint256 orderId) external {
         Order storage o = orders[orderId];
         require(o.amount > 0, "Order not found");
+        require(o.shipped, "Shipment not confirmed");
         require(o.delivered, "Delivery not confirmed");
         require(!o.paidOut, "Already paid");
 
@@ -92,7 +109,7 @@ contract EscrowPayment {
         emit PaymentReleased(orderId, o.seller, amt);
     }
 
-    // 4) Buyer submits rating ONLY after payout (this prevents fake reviews)
+    // 5) Buyer submits rating ONLY after payout (this prevents fake reviews)
     function submitRating(uint256 orderId, uint8 stars, string calldata comment) external {
         Order storage o = orders[orderId];
         require(o.buyer == msg.sender, "Only buyer can rate");
@@ -111,9 +128,9 @@ contract EscrowPayment {
     function getOrder(uint256 orderId)
         external
         view
-        returns (address buyer, address seller, uint256 amountWei, bool delivered, bool paidOut, bool rated)
+        returns (address buyer, address seller, uint256 amountWei, bool shipped, bool delivered, bool paidOut, bool rated)
     {
         Order memory o = orders[orderId];
-        return (o.buyer, o.seller, o.amount, o.delivered, o.paidOut, o.rated);
+        return (o.buyer, o.seller, o.amount, o.shipped, o.delivered, o.paidOut, o.rated);
     }
 }

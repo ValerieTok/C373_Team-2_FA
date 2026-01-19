@@ -13,23 +13,80 @@
       return map[chainId] || chainId;
     }
 
+    function updateConnectLabel(account, chainId) {
+      const btnEl = document.getElementById("btnConnect");
+      const disconnectEl = document.getElementById("btnDisconnect");
+      if (!btnEl) return;
+      if (!account) {
+        btnEl.textContent = "Connect MetaMask";
+        if (disconnectEl) {
+          disconnectEl.style.display = "none";
+          disconnectEl.disabled = true;
+        }
+        return;
+      }
+      const network = chainName(chainId);
+      btnEl.textContent = `${account} (${network})`;
+      if (disconnectEl) {
+        disconnectEl.style.display = "inline-block";
+        disconnectEl.disabled = false;
+      }
+    }
+
+    async function refreshWalletLabel() {
+      if (!window.ethereum) {
+        return;
+      }
+      const accounts = await window.ethereum.request({ method: "eth_accounts" });
+      const chainId = await window.ethereum.request({ method: "eth_chainId" });
+      const wallet = accounts && accounts.length ? accounts[0] : null;
+      updateConnectLabel(wallet, chainId);
+    }
+
     async function connectWallet() {
       if (!window.ethereum) {
         alert("MetaMask not found. Please install MetaMask.");
         return;
       }
       const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      if (accounts && accounts.length) {
-        const wallet = accounts[0];
-        const chainId = await window.ethereum.request({ method: "eth_chainId" });
-        const network = chainName(chainId);
-        document.getElementById("btnConnect").textContent = `${wallet} (${network})`;
+      const wallet = accounts && accounts.length ? accounts[0] : null;
+      const chainId = await window.ethereum.request({ method: "eth_chainId" });
+      updateConnectLabel(wallet, chainId);
+    }
+
+    async function disconnectWallet() {
+      if (!window.ethereum) {
+        return;
       }
+      try {
+        await window.ethereum.request({
+          method: "wallet_revokePermissions",
+          params: [{ eth_accounts: {} }],
+        });
+      } catch (_) {
+        // MetaMask may not support revoking; fall back to UI reset.
+      }
+      const chainId = await window.ethereum.request({ method: "eth_chainId" });
+      updateConnectLabel(null, chainId);
     }
 
     const btn = document.getElementById("btnConnect");
     if (btn) {
       btn.addEventListener("click", connectWallet);
+    }
+    const btnDisconnect = document.getElementById("btnDisconnect");
+    if (btnDisconnect) {
+      btnDisconnect.addEventListener("click", disconnectWallet);
+    }
+
+    if (window.ethereum) {
+      window.ethereum.on("accountsChanged", () => {
+        refreshWalletLabel().catch(() => {});
+      });
+      window.ethereum.on("chainChanged", () => {
+        refreshWalletLabel().catch(() => {});
+      });
+      refreshWalletLabel().catch(() => {});
     }
 
   </script>

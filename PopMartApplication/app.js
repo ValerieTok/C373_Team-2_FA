@@ -18,7 +18,6 @@ const products = [
     name: "Aurora Bloom Figurine",
     category: "Limited Drop",
     sellerName: "LumenVault",
-    sellerWallet: "0x123afafd49f9fa15fa24ab71c1deb1c72aeb1be5",
     shortDesc: "Iridescent finish, numbered 1-500.",
     fullDesc:
       "A glow-layer figurine with etched base and serialized certificate. Ships in a protective case.",
@@ -30,7 +29,6 @@ const products = [
     name: "Neo Koi Limited",
     category: "Artist Series",
     sellerName: "HarborByte",
-    sellerWallet: "0x123afafd49f9fa15fa24ab71c1deb1c72aeb1be5",
     shortDesc: "Metallic koi with hand-painted details.",
     fullDesc:
       "Limited run of 250. Includes tracking hash in escrow once shipped.",
@@ -42,7 +40,6 @@ const products = [
     name: "Orbit Ghost Mech",
     category: "New Drop",
     sellerName: "RetroCove",
-    sellerWallet: "0x123afafd49f9fa15fa24ab71c1deb1c72aeb1be5",
     shortDesc: "Transparent mech armor with neon core.",
     fullDesc:
       "Buyer inspection window enabled. Includes QR to verify authenticity.",
@@ -54,7 +51,6 @@ const products = [
     name: "Sunlit Parade Set",
     category: "Collector",
     sellerName: "PrismYard",
-    sellerWallet: "0x123afafd49f9fa15fa24ab71c1deb1c72aeb1be5",
     shortDesc: "Four-piece parade set with gold accents.",
     fullDesc:
       "Escrow ready to release after delivery confirmation. Stored in foam case.",
@@ -66,7 +62,6 @@ const products = [
     name: "Gilded Astro Rabbit",
     category: "Ultra Rare",
     sellerName: "NovaStack",
-    sellerWallet: "0x123afafd49f9fa15fa24ab71c1deb1c72aeb1be5",
     shortDesc: "Gold leaf trim, cosmic helmet edition.",
     fullDesc:
       "Premium collectible with escrow dispute option enabled for high value.",
