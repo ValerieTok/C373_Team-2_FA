@@ -163,7 +163,7 @@
             item.productId,
             qty,
             unitPriceWei,
-            { value: totalWei, gasLimit: GAS_LIMIT }
+            { value: totalWei }
           );
           const receipt = await tx.wait();
           chainOrders.push({
@@ -201,16 +201,14 @@
           throw new Error("Switch MetaMask to the expected seller/buyer account before continuing.");
         }
         if (action === "ship") {
-          await (await state.contract.confirmShipment(escrowOrderId, { gasLimit: GAS_LIMIT })).wait();
+          await (await state.contract.confirmShipment(escrowOrderId)).wait();
         } else if (action === "deliver") {
-          await (await state.contract.confirmDelivery(escrowOrderId, { gasLimit: GAS_LIMIT })).wait();
-          await (await state.contract.releasePayment(escrowOrderId, { gasLimit: GAS_LIMIT })).wait();
+          await (await state.contract.confirmDelivery(escrowOrderId)).wait();
+          await (await state.contract.releasePayment(escrowOrderId)).wait();
         } else if (action === "rate") {
           const stars = Number(form.querySelector("[name=stars]").value || 5);
           const comment = form.querySelector("[name=comment]").value || "";
-          await (
-            await state.contract.submitRating(escrowOrderId, stars, comment, { gasLimit: GAS_LIMIT })
-          ).wait();
+          await (await state.contract.submitRating(escrowOrderId, stars, comment)).wait();
         }
 
         const payload =

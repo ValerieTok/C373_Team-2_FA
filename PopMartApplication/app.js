@@ -5,9 +5,7 @@ const session = require("express-session");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DEFAULT_SELLER_WALLET = String(
-  process.env.DEFAULT_SELLER_WALLET || "0xbe28B4EbAc7D8A11B2e66749fEA8f29d529c6242"
-).trim();
+const DEFAULT_SELLER_WALLET = String(process.env.DEFAULT_SELLER_WALLET || "").trim();
 const DEFAULT_BUYER_WALLET = String(process.env.DEFAULT_BUYER_WALLET || "").trim();
 
 app.set("view engine", "ejs");
