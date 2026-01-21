@@ -1,0 +1,34 @@
+<%- include("partials/header", { title: "Ratings" }) %>
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+  <span class="role-tag">Buyer view</span>
+</div>
+
+<section class="card fade-in">
+  <h2 style="margin-top:0;">Ratings for <%= product.name %></h2>
+  <p class="muted">Buyers confirm delivery, then leave a verified rating.</p>
+  <% if (!ratings.length) { %>
+    <p class="muted">No ratings yet.</p>
+  <% } else { %>
+    <% let total = 0; %>
+    <% ratings.forEach(function(rating) { total += rating.stars; }); %>
+    <% const avg = total / ratings.length; %>
+    <p><b>Average:</b> <%= avg.toFixed(2) %> / 5</p>
+    <div class="list">
+      <% ratings.forEach(function(rating) { %>
+        <div class="card" style="margin-top:10px;">
+          <div class="stack">
+            <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+              <span class="pill">Buyer: <%= rating.buyerName || "Buyer" %></span>
+              <span class="pill">Order <%= rating.orderId %></span>
+            </div>
+            <strong><%= rating.stars %> stars</strong>
+            <span class="muted"><%= rating.comment || "No comment provided." %></span>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</section>
+
+<%- include("partials/footer") %>

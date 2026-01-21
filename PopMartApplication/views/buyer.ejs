@@ -1,113 +1,79 @@
 <%- include("partials/header", { title: "Buyer Dashboard" }) %>
 
-<div
-  class="card"
-  id="buyerPage"
-  data-product-id="<%= product.id %>"
-  data-product-name="<%= product.name %>"
-  data-product-category="<%= product.category %>"
-  data-product-seller="<%= product.sellerName %>"
-  data-product-desc="<%= product.fullDesc %>"
-  data-product-image="<%= product.image %>"
-  data-product-price="<%= product.priceEth %>"
->
-  <h2>Buyer Dashboard</h2>
-  <p class="muted">
-    Create orders, confirm delivery, and submit a verified rating once escrow is released.
-  </p>
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+  <span class="role-tag">Buyer dashboard</span>
+</div>
 
-  <div class="row" style="align-items:flex-start;">
-    <div style="flex:1; min-width:260px;">
-      <img id="buyerProductImage" class="img" style="height:220px;" src="<%= product.image %>" alt="Product image"/>
-    </div>
-
-    <div style="flex:2; min-width:280px;">
-      <h3 id="buyerProductName" style="margin-top:0;"><%= product.name %></h3>
-      <div class="row">
-        <span class="pill" id="buyerProductCategory"><%= product.category %></span>
-        <span class="pill" id="buyerProductSellerName">Seller: <%= product.sellerName %></span>
-      </div>
-      <p class="muted" id="buyerProductDesc" style="margin:10px 0;"><%= product.fullDesc %></p>
-      <p><b>Price:</b> <span class="mono" id="buyerProductPrice"><%= product.priceEth %></span> ETH</p>
-
-      <hr style="border:none; border-top:1px solid #e5e7eb; margin:14px 0;"/>
-
-      <h3>Order Actions</h3>
-      <p class="muted">Use MetaMask to create an escrow order and confirm delivery.</p>
-
-      <div class="row" style="margin-top:8px;">
-        <label>Seller Wallet:</label>
-        <input id="buyerSellerAddress" type="text" placeholder="0x..." style="padding:8px; border-radius:10px; border:1px solid #e5e7eb; width:340px;">
-      </div>
-      <div class="row" style="margin-top:8px;">
-        <label>Amount (ETH):</label>
-        <input id="buyerAmountEth" type="number" min="0" step="0.0001" style="padding:8px; border-radius:10px; border:1px solid #e5e7eb; width:140px;">
-      </div>
-
-      <button class="btn" id="buyerBuy">Buy with MetaMask</button>
-      <p class="muted" id="buyerBuyStatus" style="margin-top:10px;"></p>
-
-      <div class="row" style="margin-top:10px;">
-        <label>Order ID:</label>
-        <input id="buyerOrderIdInput" type="number" min="0" style="padding:8px; border-radius:10px; border:1px solid #e5e7eb; width:120px;">
-        <button class="btn btn2" id="buyerLoadOrder">Load Order</button>
-      </div>
-
-      <div class="row" style="margin-top:10px;">
-        <button class="btn" id="buyerDeliver" disabled>Confirm Delivery</button>
-      </div>
-      <p class="muted" id="buyerDeliverStatus" style="margin-top:10px;"></p>
-      <p class="muted" id="buyerOrderStatus" style="margin-top:6px;"></p>
-
-      <hr style="border:none; border-top:1px solid #e5e7eb; margin:14px 0;"/>
-
-      <h3>Rate Seller (After Payment Release)</h3>
-      <p class="muted">
-        Rating is only allowed after escrow payment has been released.
-      </p>
-
-      <div class="row">
-        <label>Stars (1-5):</label>
-        <input id="buyerStars" type="number" min="1" max="5" value="5" style="padding:8px; border-radius:10px; border:1px solid #e5e7eb; width:90px;">
-      </div>
-
-      <div style="margin-top:10px;">
-        <label>Comment:</label><br/>
-        <textarea id="buyerComment" rows="3" style="width:100%; padding:10px; border-radius:10px; border:1px solid #e5e7eb;"></textarea>
-      </div>
-
-      <button class="btn btn2" style="margin-top:10px;" id="buyerRate" disabled>
-        Submit Rating
-      </button>
-
-      <p class="muted" id="buyerRateStatus" style="margin-top:10px;"></p>
-    </div>
+<section class="card fade-in">
+  <h2 style="margin-top:0;">Buyer Actions</h2>
+  <p class="muted">Add items from listings to your cart, checkout, confirm delivery, and rate sellers.</p>
+  <div style="display:flex; gap:12px; flex-wrap:wrap;">
+    <a class="btn btn-alt" href="/cart">Go to cart</a>
+    <a class="btn btn-ghost" href="/">Browse listings</a>
   </div>
-</div>
+</section>
 
-<br/>
+<section class="card fade-in" style="margin-top:18px;">
+  <h2 style="margin-top:0;">Your Orders</h2>
+  <p class="muted">Confirm delivery and submit ratings after items arrive.</p>
+  <div class="list">
+    <% if (!orders.length) { %>
+      <p class="muted">No orders yet.</p>
+    <% } %>
+    <% orders.forEach(function(order) { %>
+      <div class="card" style="margin-bottom:12px;">
+        <div class="list-item">
+          <img class="thumb" src="<%= order.image || '/images/popmart1.png' %>" alt="Product image" />
+          <div class="stack">
+            <strong>Order <%= order.id %></strong>
+            <span class="muted"><%= order.productName %> x <%= order.qty %></span>
+            <span class="muted">Ship to: <%= order.buyerAddress %></span>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <span class="pill"><%= order.category %></span>
+              <span class="badge">Status: <%= order.status %></span>
+              <span class="mono"><%= order.priceEth %> ETH</span>
+              <span class="pill">Escrow ID: <%= order.escrowOrderId || "Pending" %></span>
+            </div>
+            <form action="/buyer/orders/<%= order.id %>/deliver" method="POST" data-escrow-action="deliver" data-escrow-order-id="<%= order.escrowOrderId || '' %>" data-expected-wallet="<%= order.buyerWallet || '' %>">
+              <button class="btn btn-alt" type="submit" <%= order.status !== "Shipped" ? "disabled" : "" %>>
+                Confirm delivery
+              </button>
+            </form>
+            <% if (order.status === "Delivered" && !order.rated && !order.reviewSkipped) { %>
+              <% if (!order.reviewOpen) { %>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                  <form action="/buyer/orders/<%= order.id %>/review/start" method="POST">
+                    <button class="btn btn-ghost" type="submit">Leave a review</button>
+                  </form>
+                  <form action="/buyer/orders/<%= order.id %>/review/skip" method="POST">
+                    <button class="btn btn-outline" type="submit">Skip review</button>
+                  </form>
+                </div>
+              <% } else { %>
+                <form class="stack" action="/buyer/orders/<%= order.id %>/rate" method="POST" data-escrow-action="rate" data-escrow-order-id="<%= order.escrowOrderId || '' %>" data-expected-wallet="<%= order.buyerWallet || '' %>">
+                  <label>Stars (1-5)</label>
+                  <select name="stars" required>
+                    <option value="1">1 star</option>
+                    <option value="2">2 stars</option>
+                    <option value="3">3 stars</option>
+                    <option value="4">4 stars</option>
+                    <option value="5" selected>5 stars</option>
+                  </select>
+                  <label>Comment</label>
+                  <textarea name="comment" rows="3" required></textarea>
+                  <button class="btn btn-ghost" type="submit">Submit rating</button>
+                </form>
+              <% } %>
+            <% } else if (order.rated) { %>
+              <span class="muted">Rating submitted.</span>
+            <% } else if (order.reviewSkipped) { %>
+              <span class="muted">Review skipped.</span>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+</section>
 
-<div class="card">
-  <h3>Order Status</h3>
-  <p><b>Order ID:</b> <span class="mono" id="buyerOrderId">Not loaded</span></p>
-  <p><b>Buyer:</b> <span class="mono" id="buyerOrderBuyer">-</span></p>
-  <p><b>Seller:</b> <span class="mono" id="buyerOrderSeller">-</span></p>
-  <p><b>Amount (wei):</b> <span class="mono" id="buyerOrderAmount">-</span></p>
-  <p><b>Status:</b> <span class="mono" id="buyerOrderFlags">-</span></p>
-</div>
-
-<br/>
-
-<div class="card">
-  <h3>Seller Rating Snapshot</h3>
-  <p class="muted">
-    Average rating shown as "x.xx / 5".
-  </p>
-  <p><b>Average:</b> <span class="mono" id="buyerAvgRating">Loading...</span></p>
-  <p><b>Total Ratings:</b> <span class="mono" id="buyerRatingCount">Loading...</span></p>
-</div>
-
-<%- include("partials/footer", { script: [
-  "https://cdn.jsdelivr.net/npm/web3@4.16.0/dist/web3.min.js",
-  "/js/rolePages.js"
-] }) %>
+<%- include("partials/footer") %>

@@ -1,119 +1,313 @@
 const path = require("path");
 const express = require("express");
+const multer = require("multer");
+const session = require("express-session");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const DEFAULT_SELLER_WALLET = String(
+  process.env.DEFAULT_SELLER_WALLET || "0xbe28B4EbAc7D8A11B2e66749fEA8f29d529c6242"
+).trim();
+const DEFAULT_BUYER_WALLET = String(process.env.DEFAULT_BUYER_WALLET || "").trim();
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
-
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/images", express.static(path.join(__dirname, "images")));
+app.use(
+  session({
+    secret: "popmart-market-session",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 
+let cart = [];
+let orders = [];
+let ratings = [];
+let nextOrderId = 1001;
+let draftQuantities = {};
 
+const uploadsDir = path.join(__dirname, "images");
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => {
+    const safeName = String(file.originalname || "upload")
+      .replace(/\s+/g, "-")
+      .replace(/[^a-zA-Z0-9.\-_]/g, "");
+    cb(null, `${Date.now()}-${safeName}`);
+  },
+});
+const upload = multer({ storage });
 
-const products = [
+let products = [
   {
     id: 1,
-    name: "Aurora Bloom Figurine",
+    name: "Solar Drift Capsule",
     category: "Limited Drop",
-    sellerName: "LumenVault",
-    shortDesc: "Iridescent finish, numbered 1-500.",
+    sellerName: "Marketplace Seller",
+    sellerWallet: DEFAULT_SELLER_WALLET,
+    shortDesc: "Heat-washed resin with enamel crest.",
     fullDesc:
-      "A glow-layer figurine with etched base and serialized certificate. Ships in a protective case.",
-    priceEth: 0.42,
+      "A glowing capsule figure with layered metallic ink and a numbered base card. Ships in a clear vault sleeve.",
+    priceEth: 0.38,
     image: "/images/popmart1.png",
   },
   {
     id: 2,
-    name: "Neo Koi Limited",
+    name: "Koi Circuit Guardian",
     category: "Artist Series",
-    sellerName: "HarborByte",
-    shortDesc: "Metallic koi with hand-painted details.",
+    sellerName: "Marketplace Seller",
+    sellerWallet: DEFAULT_SELLER_WALLET,
+    shortDesc: "Chrome fins and etched circuit spine.",
     fullDesc:
-      "Limited run of 250. Includes tracking hash in escrow once shipped.",
-    priceEth: 0.36,
+      "Hand-finished details with micro-etching and a holographic cert. Escrow friendly for high-value trades.",
+    priceEth: 0.52,
     image: "/images/popmart2.png",
   },
   {
     id: 3,
-    name: "Orbit Ghost Mech",
-    category: "New Drop",
-    sellerName: "RetroCove",
-    shortDesc: "Transparent mech armor with neon core.",
+    name: "Moonlit Parade Trio",
+    category: "Collector",
+    sellerName: "Marketplace Seller",
+    sellerWallet: DEFAULT_SELLER_WALLET,
+    shortDesc: "Three-piece set with dusk gradients.",
     fullDesc:
-      "Buyer inspection window enabled. Includes QR to verify authenticity.",
-    priceEth: 0.58,
+      "A trio of parade figures with foil accents and foam-lined tray. Ships insured with tracking.",
+    priceEth: 0.29,
     image: "/images/popmart3.png",
   },
-  {
-    id: 4,
-    name: "Sunlit Parade Set",
-    category: "Collector",
-    sellerName: "PrismYard",
-    shortDesc: "Four-piece parade set with gold accents.",
-    fullDesc:
-      "Escrow ready to release after delivery confirmation. Stored in foam case.",
-    priceEth: 0.31,
-    image: "/images/popmart4.png",
-  },
-  {
-    id: 5,
-    name: "Gilded Astro Rabbit",
-    category: "Ultra Rare",
-    sellerName: "NovaStack",
-    shortDesc: "Gold leaf trim, cosmic helmet edition.",
-    fullDesc:
-      "Premium collectible with escrow dispute option enabled for high value.",
-    priceEth: 0.71,
-    image: "/images/popmart5.png",
-  },
 ];
 
-const defaultProduct = products[0];
+function nextProductId() {
+  return products.reduce((maxId, item) => Math.max(maxId, item.id), 0) + 1;
+}
 
-const sampleOrders = [
-  { orderId: 101, productName: "Aurora Bloom Figurine", status: "Awaiting Delivery" },
-  { orderId: 102, productName: "Neo Koi Limited", status: "Shipped" },
-  { orderId: 103, productName: "Orbit Ghost Mech", status: "Delivered" },
-];
+function findProduct(productId) {
+  return products.find((item) => item.id === productId) || null;
+}
+
+function formatTimestamp(value) {
+  if (!value) return "Pending";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Pending";
+  return date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function buildRatingsSummary(items, allRatings) {
+  const summary = {};
+  items.forEach((product) => {
+    const list = allRatings.filter((rating) => rating.productId === product.id);
+    const count = list.length;
+    const avg =
+      count === 0
+        ? 0
+        : list.reduce((sum, rating) => sum + Number(rating.stars || 0), 0) / count;
+    summary[product.id] = { avg, count };
+  });
+  return summary;
+}
+
+app.use((req, res, next) => {
+  res.locals.cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
+  next();
+});
 
 app.get("/", (req, res) => {
-  res.render("index", { products });
+  const quantities = {};
+  products.forEach((product) => {
+    quantities[product.id] = draftQuantities[product.id] || 1;
+  });
+  const ratingsSummary = buildRatingsSummary(products, ratings);
+  let bestProductId = null;
+  let bestScore = -1;
+  products.forEach((product) => {
+    const info = ratingsSummary[product.id];
+    if (!info || info.count === 0) return;
+    if (info.avg > bestScore) {
+      bestScore = info.avg;
+      bestProductId = product.id;
+    }
+  });
+  res.render("index", { products, quantities, ratingsSummary, bestProductId });
 });
 
-app.get("/about", (req, res) => {
-  res.render("about");
+app.get("/seller", (req, res) => {
+  const formattedOrders = orders.map((order) => ({
+    ...order,
+    createdAtDisplay: formatTimestamp(order.createdAt),
+    shippedAtDisplay: formatTimestamp(order.shippedAt),
+    deliveredAtDisplay: formatTimestamp(order.deliveredAt),
+    releasedAtDisplay: formatTimestamp(order.releasedAt),
+  }));
+  const earningsEth = formattedOrders
+    .filter((order) => order.paymentReleased)
+    .reduce((sum, order) => sum + order.priceEth * order.qty, 0);
+  res.render("seller", {
+    products,
+    orders: formattedOrders,
+    earningsEth,
+    defaultSellerWallet: DEFAULT_SELLER_WALLET,
+  });
 });
 
-app.get("/myOrders", (req, res) => {
-  res.render("myOrders", { sampleOrders });
+app.post("/seller/listings", upload.single("imageFile"), (req, res) => {
+  const {
+    name,
+    category,
+    shortDesc,
+    priceEth,
+    sellerWallet,
+  } = req.body;
+
+  const imagePath = req.file ? `/images/${req.file.filename}` : "/images/popmart1.png";
+  const product = {
+    id: nextProductId(),
+    name: String(name || "Untitled Listing").trim(),
+    category: String(category || "General").trim(),
+    sellerName: "Marketplace Seller",
+    sellerWallet: String(sellerWallet || DEFAULT_SELLER_WALLET || "").trim(),
+    shortDesc: String(shortDesc || "New listing").trim(),
+    fullDesc: String(shortDesc || "New listing").trim(),
+    priceEth: Number(priceEth || 0),
+    image: imagePath,
+  };
+
+  products = [product, ...products];
+  draftQuantities[product.id] = 1;
+  res.redirect("/");
 });
 
-// OR if you already have products array in app.js, reuse it.
-app.get("/role/buyer", (req, res) => {
-  const productId = Number(req.query.productId);
-  const product = products.find(p => p.id === productId) || null;
-  res.render("buyer", { product });
+app.post("/listings/:id/qty/increase", (req, res) => {
+  const productId = Number(req.params.id);
+  const current = draftQuantities[productId] || 1;
+  draftQuantities[productId] = current + 1;
+  res.redirect("/");
 });
 
-app.get("/role/seller", (req, res) => {
-  const productId = req.query.productId;
+app.post("/listings/:id/qty/decrease", (req, res) => {
+  const productId = Number(req.params.id);
+  const current = draftQuantities[productId] || 1;
+  draftQuantities[productId] = Math.max(current - 1, 1);
+  res.redirect("/");
+});
 
-  if (!productId) {
-    // no context provided; go back to listings (or a default)
-    return res.redirect("/"); 
+app.post("/seller/orders/:id/ship", (req, res) => {
+  const orderId = Number(req.params.id);
+  orders = orders.map((order) =>
+    order.id === orderId && order.status === "Awaiting Shipment"
+      ? { ...order, status: "Shipped", shippedAt: new Date().toISOString() }
+      : order
+  );
+  if (req.is("application/json")) {
+    return res.json({ ok: true });
   }
-
-  const product = products.find(p => String(p.id) === String(productId)) || null;
-  return res.render("seller", { product });
+  res.redirect("/seller");
 });
 
+app.get("/buyer", (req, res) => {
+  res.render("buyer", { orders });
+});
 
-app.get("/product", (req, res) => {
-  res.render("product", { product: defaultProduct });
+app.get("/cart", (req, res) => {
+  const added = Boolean(req.session && req.session.cartAdded);
+  if (req.session) {
+    req.session.cartAdded = false;
+  }
+  res.render("cart", { cart, added });
+});
+
+app.post("/cart/add", (req, res) => {
+  const productId = Number(req.body.productId);
+  const qty = Math.max(Number(req.body.qty || 1), 1);
+  const product = findProduct(productId);
+  const existing = cart.find((item) => item.productId === productId);
+  if (existing) {
+    existing.qty += qty;
+  } else {
+    cart.push({
+      productId,
+      name: String(req.body.name || "Item").trim(),
+      category: String(req.body.category || "General").trim(),
+      priceEth: Number(req.body.priceEth || 0),
+      sellerName: product ? product.sellerName : "Marketplace Seller",
+      sellerWallet: product ? product.sellerWallet : DEFAULT_SELLER_WALLET,
+      image: String(req.body.image || "/images/popmart1.png").trim(),
+      qty,
+    });
+  }
+  if (req.session) {
+    req.session.cartAdded = true;
+  }
+  res.redirect("/cart");
+});
+
+app.post("/cart/remove", (req, res) => {
+  const productId = Number(req.body.productId);
+  cart = cart.filter((item) => item.productId !== productId);
+  res.redirect("/cart");
+});
+
+app.get("/checkout", (req, res) => {
+  res.render("checkout", { cart, status: null });
+});
+
+app.post("/checkout", (req, res) => {
+  const isJson = req.is("application/json");
+  const chainOrders = Array.isArray(req.body.chainOrders) ? req.body.chainOrders : [];
+  const buyerWallet = String(req.body.buyerWallet || DEFAULT_BUYER_WALLET || "").trim();
+  if (!cart.length) {
+    if (isJson) {
+      return res.status(400).json({ ok: false, message: "Your cart is empty." });
+    }
+    return res.render("checkout", { cart, status: "Your cart is empty." });
+  }
+  const buyerName = String(req.body.buyerName || "").trim();
+  const buyerEmail = String(req.body.buyerEmail || "").trim();
+  const buyerAddress = String(req.body.buyerAddress || "").trim();
+  const createdAt = new Date().toISOString();
+
+  const newOrders = cart.map((item, index) => {
+    const chainOrder = chainOrders[index] || {};
+    return {
+      id: nextOrderId++,
+      productId: item.productId,
+      productName: item.name,
+      category: item.category,
+      priceEth: item.priceEth,
+      image: item.image,
+      qty: item.qty,
+      status: "Awaiting Shipment",
+      buyerName,
+      buyerEmail,
+      buyerAddress,
+      buyerWallet,
+      sellerWallet: item.sellerWallet || DEFAULT_SELLER_WALLET,
+      escrowOrderId: chainOrder.orderId || null,
+      escrowTxHash: chainOrder.txHash || null,
+      createdAt,
+      rated: false,
+      reviewOpen: false,
+      reviewSkipped: false,
+      paymentReleased: false,
+      releasedAt: null,
+      sellerName: item.sellerName || "Marketplace Seller",
+    };
+  });
+  orders = orders.concat(newOrders);
+  cart = [];
+  if (isJson) {
+    return res.json({ ok: true, redirect: "/buyer" });
+  }
+  res.render("checkout", { cart, status: "Order placed! Seller will confirm shipment soon." });
 });
 
 app.get("/product/:id", (req, res) => {
@@ -122,9 +316,88 @@ app.get("/product/:id", (req, res) => {
   if (!product) {
     return res.status(404).send("Product not found");
   }
-  return res.render("product", { product });
+  const productRatings = ratings.filter((rating) => rating.productId === productId);
+  return res.render("product", { product, ratings: productRatings });
+});
+
+app.get("/ratings/:id", (req, res) => {
+  const productId = Number(req.params.id);
+  const product = products.find((item) => item.id === productId);
+  if (!product) {
+    return res.status(404).send("Product not found");
+  }
+  const productRatings = ratings.filter((rating) => rating.productId === productId);
+  return res.render("ratings", { product, ratings: productRatings });
+});
+
+app.post("/buyer/orders/:id/deliver", (req, res) => {
+  const orderId = Number(req.params.id);
+  orders = orders.map((order) =>
+    order.id === orderId && order.status === "Shipped"
+      ? {
+          ...order,
+          status: "Delivered",
+          deliveredAt: new Date().toISOString(),
+          paymentReleased: true,
+          releasedAt: new Date().toISOString(),
+        }
+      : order
+  );
+  if (req.is("application/json")) {
+    return res.json({ ok: true });
+  }
+  res.redirect("/buyer");
+});
+
+app.post("/buyer/orders/:id/rate", (req, res) => {
+  const orderId = Number(req.params.id);
+  const order = orders.find((item) => item.id === orderId);
+  if (!order || order.status !== "Delivered" || order.rated) {
+    if (req.is("application/json")) {
+      return res.status(400).json({ ok: false, message: "Invalid order state." });
+    }
+    return res.redirect("/buyer");
+  }
+  const stars = Math.min(Math.max(Number(req.body.stars || 5), 1), 5);
+  const comment = String(req.body.comment || "").trim();
+  ratings.push({
+    productId: order.productId,
+    productName: order.productName,
+    buyerName: order.buyerName || "Buyer",
+    orderId: order.id,
+    stars,
+    comment,
+    createdAt: new Date().toISOString(),
+  });
+  orders = orders.map((item) =>
+    item.id === orderId ? { ...item, rated: true, reviewOpen: false } : item
+  );
+  if (req.is("application/json")) {
+    return res.json({ ok: true });
+  }
+  res.redirect("/buyer");
+});
+
+app.post("/buyer/orders/:id/review/start", (req, res) => {
+  const orderId = Number(req.params.id);
+  orders = orders.map((order) =>
+    order.id === orderId && order.status === "Delivered" && !order.rated
+      ? { ...order, reviewOpen: true, reviewSkipped: false }
+      : order
+  );
+  res.redirect("/buyer");
+});
+
+app.post("/buyer/orders/:id/review/skip", (req, res) => {
+  const orderId = Number(req.params.id);
+  orders = orders.map((order) =>
+    order.id === orderId && order.status === "Delivered" && !order.rated
+      ? { ...order, reviewOpen: false, reviewSkipped: true }
+      : order
+  );
+  res.redirect("/buyer");
 });
 
 app.listen(PORT, () => {
-  console.log(`PopMart app listening on http://localhost:${PORT}`);
+  console.log(`Marketplace UI running on http://localhost:${PORT}`);
 });

@@ -1,111 +1,91 @@
 <%- include("partials/header", { title: "Seller Dashboard" }) %>
 
-<div
-  class="card"
-  id="sellerPage"
-  data-product-id="<%= product.id %>"
-  data-product-name="<%= product.name %>"
-  data-product-category="<%= product.category %>"
-  data-product-seller="<%= product.sellerName %>"
-  data-product-desc="<%= product.fullDesc %>"
-  data-product-image="<%= product.image %>"
-  data-product-price="<%= product.priceEth %>"
->
-  <h2>Seller Dashboard</h2>
-  <p class="muted">
-    Confirm shipment, release escrow after delivery, and review buyer feedback.
-  </p>
-
-  <div class="row" style="align-items:flex-start;">
-    <div style="flex:1; min-width:260px;">
-      <img id="sellerProductImage" class="img" style="height:220px;" src="<%= product.image %>" alt="Product image"/>
-    </div>
-
-    <div style="flex:2; min-width:280px;">
-      <h3 id="sellerProductName" style="margin-top:0;"><%= product.name %></h3>
-      <div class="row">
-        <span class="pill" id="sellerProductCategory"><%= product.category %></span>
-        <span class="pill" id="sellerProductSellerName">Seller: <%= product.sellerName %></span>
-      </div>
-      <p class="muted" id="sellerProductDesc" style="margin:10px 0;"><%= product.fullDesc %></p>
-      <p><b>Price:</b> <span class="mono" id="sellerProductPrice"><%= product.priceEth %></span> ETH</p>
-
-      <hr style="border:none; border-top:1px solid #e5e7eb; margin:14px 0;"/>
-
-      <h3>Order Actions</h3>
-      <p class="muted">Use the latest order or load a specific order ID.</p>
-
-      <div class="row" style="margin-top:10px;">
-        <label>Order ID:</label>
-        <input id="sellerOrderIdInput" type="number" min="0" style="padding:8px; border-radius:10px; border:1px solid #e5e7eb; width:120px;">
-        <button class="btn btn2" id="sellerLoadOrder">Load Order</button>
-      </div>
-
-      <div class="row" style="margin-top:10px;">
-        <button class="btn btn2" id="sellerShip" disabled>Confirm Shipment</button>
-        <button class="btn" id="sellerRelease" disabled>Release Payment</button>
-      </div>
-
-      <p class="muted" id="sellerShipStatus" style="margin-top:10px;"></p>
-      <p class="muted" id="sellerReleaseStatus" style="margin-top:6px;"></p>
-      <p class="muted" id="sellerOrderStatus" style="margin-top:6px;"></p>
-
-      <hr style="border:none; border-top:1px solid #e5e7eb; margin:14px 0;"/>
-
-      <h3>Latest Rating</h3>
-      <p class="muted">
-        The most recent rating submitted for your wallet (from on-chain events).
-      </p>
-      <p><b>Stars:</b> <span class="mono" id="sellerLatestRatingStars">-</span></p>
-      <p><b>Comment:</b> <span class="mono" id="sellerLatestRatingComment">Not available</span></p>
-      <p><b>Order ID:</b> <span class="mono" id="sellerLatestRatingOrder">-</span></p>
-      <div class="row">
-        <b>Visual:</b>
-        <span class="stars" id="sellerLatestRatingStarsDisplay">
-          <span class="star">★</span>
-          <span class="star">★</span>
-          <span class="star">★</span>
-          <span class="star">★</span>
-          <span class="star">★</span>
-        </span>
-      </div>
-    </div>
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+  <span class="role-tag">Seller dashboard</span>
+  <div class="card" style="padding:10px 14px; border-radius:14px;">
+    <span class="muted">Earnings released</span>
+    <div class="mono" style="font-size:16px;"><%= earningsEth.toFixed(2) %> ETH</div>
   </div>
 </div>
 
-<br/>
+<div class="grid">
+  <section class="card fade-in">
+    <h2 style="margin-top:0;">List a Product</h2>
+    <p class="muted">Add a new listing that appears on the marketplace.</p>
+    <form action="/seller/listings" method="POST" class="stack" enctype="multipart/form-data">
+      <input type="text" name="name" placeholder="Product name" required />
+      <input type="text" name="category" placeholder="Category" required />
+      <input type="number" name="priceEth" step="0.01" min="0" placeholder="Price in ETH" required />
+      <input type="file" name="imageFile" accept="image/*" required />
+      <input type="text" name="shortDesc" placeholder="Short description" required />
+      <button class="btn btn-alt" type="submit">Publish Listing</button>
+    </form>
+  </section>
 
-<div class="card">
-  <h3>Order Status</h3>
-  <p><b>Order ID:</b> <span class="mono" id="sellerOrderId">Not loaded</span></p>
-  <p><b>Buyer:</b> <span class="mono" id="sellerOrderBuyer">-</span></p>
-  <p><b>Seller:</b> <span class="mono" id="sellerOrderSeller">-</span></p>
-  <p><b>Amount (wei):</b> <span class="mono" id="sellerOrderAmount">-</span></p>
-  <p><b>Status:</b> <span class="mono" id="sellerOrderFlags">-</span></p>
+  <section class="card fade-in">
+    <h2 style="margin-top:0;">Your Listings</h2>
+    <p class="muted">Check how your products appear on the marketplace.</p>
+    <div class="list">
+      <% products.forEach(function(product) { %>
+        <div class="list-item">
+          <img class="thumb" src="<%= product.image %>" alt="Product image" />
+          <div class="stack">
+            <strong><%= product.name %></strong>
+          <span class="mono"><%= product.priceEth %> ETH</span>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </section>
 </div>
 
-<br/>
-
-  <div class="card">
-  <h3>Seller Rating Snapshot</h3>
-  <p class="muted">
-    Average rating shown as "x.xx / 5".
-  </p>
-  <div class="row">
-    <b>Average:</b>
-    <span class="stars" id="sellerAvgRatingStars">
-      <span class="star">★</span>
-      <span class="star">★</span>
-      <span class="star">★</span>
-      <span class="star">★</span>
-      <span class="star">★</span>
-    </span>
-    <span class="stars-note"><span class="mono" id="sellerAvgRating">Loading...</span> / 5</span>
+<section class="card fade-in" style="margin-top:18px;">
+  <h2 style="margin-top:0;">Orders to Fulfill</h2>
+  <p class="muted">View incoming orders and confirm shipment when you ship.</p>
+  <p class="muted" style="margin-bottom:12px;">Latest orders are shown below.</p>
+  <div class="list">
+    <% if (!orders.length) { %>
+      <p class="muted">No orders yet.</p>
+    <% } %>
+    <% orders.forEach(function(order) { %>
+      <div class="card" style="margin-bottom:12px;">
+        <div class="list-item">
+          <img class="thumb" src="<%= order.image || '/images/popmart1.png' %>" alt="Product image" />
+          <div class="stack">
+            <strong>Order <%= order.id %></strong>
+            <span class="muted"><%= order.productName %> x <%= order.qty %></span>
+            <span class="muted">Buyer: <%= order.buyerName %></span>
+            <span class="muted">Ship to: <%= order.buyerAddress %></span>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <span class="pill"><%= order.category %></span>
+              <span class="badge">Status: <%= order.status %></span>
+              <span class="mono"><%= order.priceEth %> ETH</span>
+              <span class="pill">Escrow ID: <%= order.escrowOrderId || "Pending" %></span>
+            </div>
+            <div class="timeline">
+              <div class="timeline-item">
+                Order placed: <span class="mono"><%= order.createdAtDisplay %></span>
+              </div>
+              <div class="timeline-item">
+                Shipment confirmed: <span class="mono"><%= order.shippedAtDisplay %></span>
+              </div>
+              <div class="timeline-item">
+                Delivery confirmed: <span class="mono"><%= order.deliveredAtDisplay %></span>
+              </div>
+              <div class="timeline-item">
+                Payment released: <span class="mono"><%= order.releasedAtDisplay %></span>
+              </div>
+            </div>
+            <form action="/seller/orders/<%= order.id %>/ship" method="POST" data-escrow-action="ship" data-escrow-order-id="<%= order.escrowOrderId || '' %>" data-expected-wallet="<%= order.sellerWallet || '' %>">
+              <button class="btn btn-alt" type="submit" <%= order.status !== "Awaiting Shipment" ? "disabled" : "" %>>
+                Confirm shipment
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    <% }) %>
   </div>
-  <p><b>Total Ratings:</b> <span class="mono" id="sellerRatingCount">Loading...</span></p>
-</div>
+</section>
 
-<%- include("partials/footer", { script: [
-  "https://cdn.jsdelivr.net/npm/web3@4.16.0/dist/web3.min.js",
-  "/js/rolePages.js"
-] }) %>
+<%- include("partials/footer") %>

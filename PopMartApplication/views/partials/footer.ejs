@@ -1,103 +1,312 @@
   </div>
-
-  <script>
-    // Basic MetaMask connect (front-end only)
-    function chainName(chainId) {
-      const map = {
-        "0x1": "Ethereum Mainnet",
-        "0xaa36a7": "Sepolia",
-        "0x5": "Goerli",
-        "0x539": "Localhost 1337",
-        "0x7a69": "Localhost 31337",
-      };
-      return map[chainId] || chainId;
-    }
-
-    function updateConnectLabel(account, chainId) {
-      const btnEl = document.getElementById("btnConnect");
-      const disconnectEl = document.getElementById("btnDisconnect");
-      if (!btnEl) return;
-      if (!account) {
-        btnEl.textContent = "Connect MetaMask";
-        if (disconnectEl) {
-          disconnectEl.style.display = "none";
-          disconnectEl.disabled = true;
-        }
-        return;
-      }
-      const network = chainName(chainId);
-      btnEl.textContent = `${account} (${network})`;
-      if (disconnectEl) {
-        disconnectEl.style.display = "inline-block";
-        disconnectEl.disabled = false;
-      }
-    }
-
-    async function refreshWalletLabel() {
-      if (!window.ethereum) {
-        return;
-      }
-      const accounts = await window.ethereum.request({ method: "eth_accounts" });
-      const chainId = await window.ethereum.request({ method: "eth_chainId" });
-      const wallet = accounts && accounts.length ? accounts[0] : null;
-      updateConnectLabel(wallet, chainId);
-    }
-
-    async function connectWallet() {
-      if (!window.ethereum) {
-        alert("MetaMask not found. Please install MetaMask.");
-        return;
-      }
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      const wallet = accounts && accounts.length ? accounts[0] : null;
-      const chainId = await window.ethereum.request({ method: "eth_chainId" });
-      updateConnectLabel(wallet, chainId);
-    }
-
-    async function disconnectWallet() {
-      if (!window.ethereum) {
-        return;
-      }
-      try {
-        await window.ethereum.request({
-          method: "wallet_revokePermissions",
-          params: [{ eth_accounts: {} }],
-        });
-      } catch (_) {
-        // MetaMask may not support revoking; fall back to UI reset.
-      }
-      const chainId = await window.ethereum.request({ method: "eth_chainId" });
-      updateConnectLabel(null, chainId);
-    }
-
-    const btn = document.getElementById("btnConnect");
-    if (btn) {
-      btn.addEventListener("click", connectWallet);
-    }
-    const btnDisconnect = document.getElementById("btnDisconnect");
-    if (btnDisconnect) {
-      btnDisconnect.addEventListener("click", disconnectWallet);
-    }
-
-    if (window.ethereum) {
-      window.ethereum.on("accountsChanged", () => {
-        refreshWalletLabel().catch(() => {});
-      });
-      window.ethereum.on("chainChanged", () => {
-        refreshWalletLabel().catch(() => {});
-      });
-      refreshWalletLabel().catch(() => {});
-    }
-
-  </script>
-
-  <!-- Page-specific script(s) -->
-  <% if (Array.isArray(script)) { %>
-    <% script.forEach(function (src) { %>
-      <script src="<%= src %>"></script>
-    <% }) %>
-  <% } else if (script) { %>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <% if (typeof script === "string" && script.length) { %>
     <script src="<%= script %>"></script>
   <% } %>
+  <script>
+    (function () {
+      const walletBtn = document.getElementById("connectWalletBtn");
+      const walletLabel = document.getElementById("walletAddress");
+      const disconnectBtn = document.getElementById("disconnectWalletBtn");
+      const state = { provider: null, signer: null, account: null, contract: null };
+      const GAS_LIMIT = 600000;
+
+      function getRoleLabel(address) {
+        if (!address) return "";
+        const account = address.toLowerCase();
+        const sellerForms = Array.from(
+          document.querySelectorAll('form[data-escrow-action="ship"]')
+        );
+        const buyerForms = Array.from(
+          document.querySelectorAll(
+            'form[data-escrow-action="deliver"], form[data-escrow-action="rate"]'
+          )
+        );
+        const sellerWallets = new Set(
+          sellerForms
+            .map(function (form) {
+              return (form.dataset.expectedWallet || "").toLowerCase();
+            })
+            .filter(Boolean)
+        );
+        const buyerWallets = new Set(
+          buyerForms
+            .map(function (form) {
+              return (form.dataset.expectedWallet || "").toLowerCase();
+            })
+            .filter(Boolean)
+        );
+        const isSeller = sellerWallets.has(account);
+        const isBuyer = buyerWallets.has(account);
+        if (isSeller && isBuyer) return "Buyer/Seller";
+        if (isSeller) return "Seller";
+        if (isBuyer) return "Buyer";
+        return "";
+      }
+
+      function setWalletUI(address) {
+        if (walletLabel) {
+          const role = address ? getRoleLabel(address) : "";
+          if (!address) {
+            walletLabel.textContent = "";
+          } else if (role) {
+            walletLabel.textContent = role + ": " + address;
+          } else {
+            walletLabel.textContent = address;
+          }
+        }
+        if (walletBtn) {
+          walletBtn.textContent = address ? "Wallet connected" : "Connect wallet";
+        }
+      }
+
+      function getProvider() {
+        if (!window.ethereum) return null;
+        if (Array.isArray(window.ethereum.providers)) {
+          return window.ethereum.providers.find((p) => p.isMetaMask) || window.ethereum.providers[0];
+        }
+        return window.ethereum;
+      }
+
+      async function loadArtifact(path) {
+        const res = await fetch(path, { cache: "no-store" });
+        if (!res.ok) {
+          throw new Error("Missing contract artifact: " + path);
+        }
+        return res.json();
+      }
+
+      function resolveAddress(artifact, chainId) {
+        const networks = artifact.networks || {};
+        const direct = networks[String(chainId)];
+        if (direct && direct.address) return direct.address;
+        const keys = Object.keys(networks);
+        if (keys.length === 1 && networks[keys[0]].address) {
+          return networks[keys[0]].address;
+        }
+        return null;
+      }
+
+      async function initContract() {
+        if (!window.ethers) {
+          throw new Error("Ethers library not loaded.");
+        }
+        const provider = getProvider();
+        if (!provider) {
+          throw new Error("MetaMask not detected.");
+        }
+        if (!state.provider) {
+          state.provider = new window.ethers.providers.Web3Provider(provider);
+          state.signer = state.provider.getSigner();
+        }
+        const network = await state.provider.getNetwork();
+        const artifact = await loadArtifact("/build/EscrowPayment.json");
+        const address = resolveAddress(artifact, network.chainId);
+        if (!address) {
+          throw new Error("Escrow contract not deployed on this network.");
+        }
+        state.contract = new window.ethers.Contract(address, artifact.abi, state.signer);
+      }
+
+      async function connectWallet() {
+        const provider = getProvider();
+        if (!provider) {
+          throw new Error("MetaMask not detected.");
+        }
+        await provider.request({
+          method: "wallet_requestPermissions",
+          params: [{ eth_accounts: {} }],
+        });
+        const accounts = await provider.request({ method: "eth_requestAccounts" });
+        state.account = accounts && accounts.length ? accounts[0] : null;
+        setWalletUI(state.account);
+        if (!state.contract) {
+          await initContract();
+        }
+        return state.account;
+      }
+
+      async function ensureReady() {
+        if (!state.account) {
+          await connectWallet();
+        }
+        if (!state.contract) {
+          await initContract();
+        }
+      }
+
+      async function getNextOrderId() {
+        return state.contract.nextOrderId();
+      }
+
+      async function handleCheckout(form) {
+        const cartEl = document.getElementById("cartData");
+        const cart = cartEl ? JSON.parse(cartEl.textContent || "[]") : [];
+        if (!cart.length) {
+          throw new Error("Your cart is empty.");
+        }
+        const buyerName = form.querySelector("[name=buyerName]").value;
+        const buyerEmail = form.querySelector("[name=buyerEmail]").value;
+        const buyerAddress = form.querySelector("[name=buyerAddress]").value;
+        const chainOrders = [];
+
+        for (const item of cart) {
+          if (!item.sellerWallet) {
+            throw new Error("Missing seller wallet for " + item.name + ".");
+          }
+          const qty = Number(item.qty || 0);
+          const unitPriceWei = window.ethers.utils.parseEther(String(item.priceEth || 0));
+          const totalWei = unitPriceWei.mul(window.ethers.BigNumber.from(qty));
+          const expectedOrderId = await getNextOrderId();
+          const tx = await state.contract.createOrder(
+            item.sellerWallet,
+            item.productId,
+            qty,
+            unitPriceWei,
+            { value: totalWei, gasLimit: GAS_LIMIT }
+          );
+          const receipt = await tx.wait();
+          chainOrders.push({
+            orderId: String(expectedOrderId),
+            txHash: receipt.transactionHash,
+          });
+        }
+
+        const response = await fetch(form.action, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({
+            buyerName: buyerName,
+            buyerEmail: buyerEmail,
+            buyerAddress: buyerAddress,
+            buyerWallet: state.account,
+            chainOrders: chainOrders,
+          }),
+        });
+        const payload = await response.json().catch(function () { return {}; });
+        if (!response.ok) {
+          throw new Error(payload.message || "Checkout failed.");
+        }
+        window.location.href = payload.redirect || "/buyer";
+      }
+
+      async function handleEscrowAction(form) {
+        const action = form.dataset.escrowAction;
+        const escrowOrderId = form.dataset.escrowOrderId;
+        const expectedWallet = (form.dataset.expectedWallet || "").toLowerCase();
+        if (!escrowOrderId) {
+          throw new Error("Escrow order ID missing.");
+        }
+        if (expectedWallet && state.account && state.account.toLowerCase() !== expectedWallet) {
+          throw new Error("Switch MetaMask to the expected seller/buyer account before continuing.");
+        }
+        if (action === "ship") {
+          await (await state.contract.confirmShipment(escrowOrderId, { gasLimit: GAS_LIMIT })).wait();
+        } else if (action === "deliver") {
+          await (await state.contract.confirmDelivery(escrowOrderId, { gasLimit: GAS_LIMIT })).wait();
+          await (await state.contract.releasePayment(escrowOrderId, { gasLimit: GAS_LIMIT })).wait();
+        } else if (action === "rate") {
+          const stars = Number(form.querySelector("[name=stars]").value || 5);
+          const comment = form.querySelector("[name=comment]").value || "";
+          await (
+            await state.contract.submitRating(escrowOrderId, stars, comment, { gasLimit: GAS_LIMIT })
+          ).wait();
+        }
+
+        const payload =
+          action === "rate"
+            ? {
+                stars: form.querySelector("[name=stars]").value,
+                comment: form.querySelector("[name=comment]").value,
+              }
+            : {};
+
+        const response = await fetch(form.action, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+          const errorPayload = await response.json().catch(function () { return {}; });
+          throw new Error(errorPayload.message || "Server update failed.");
+        }
+        window.location.reload();
+      }
+
+      function bindCheckout() {
+        const form = document.querySelector("[data-escrow-checkout]");
+        if (!form) return;
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          const submitBtn = form.querySelector("button[type=submit]");
+          const originalText = submitBtn ? submitBtn.textContent : "";
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Processing...";
+          }
+          ensureReady()
+            .then(function () { return handleCheckout(form); })
+            .catch(function (err) { alert(err.message || "Checkout failed."); })
+            .finally(function () {
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+              }
+            });
+        });
+      }
+
+      function bindEscrowActions() {
+        const forms = document.querySelectorAll("form[data-escrow-action]");
+        forms.forEach(function (form) {
+          form.addEventListener("submit", function (event) {
+            event.preventDefault();
+            const submitBtn = form.querySelector("button[type=submit]");
+            const originalText = submitBtn ? submitBtn.textContent : "";
+            if (submitBtn) {
+              submitBtn.disabled = true;
+              submitBtn.textContent = "Processing...";
+            }
+            ensureReady()
+              .then(function () { return handleEscrowAction(form); })
+              .catch(function (err) { alert(err.message || "Transaction failed."); })
+              .finally(function () {
+                if (submitBtn) {
+                  submitBtn.disabled = false;
+                  submitBtn.textContent = originalText;
+                }
+              });
+          });
+        });
+      }
+
+      if (walletBtn) {
+        walletBtn.addEventListener("click", function () {
+          connectWallet().catch(function (err) {
+            alert(err.message || "Unable to connect wallet.");
+          });
+        });
+      }
+
+      if (disconnectBtn) {
+        disconnectBtn.addEventListener("click", function () {
+          state.account = null;
+          setWalletUI("");
+        });
+      }
+
+      bindCheckout();
+      bindEscrowActions();
+
+      const provider = getProvider();
+      if (provider && typeof provider.request === "function") {
+        provider.on("accountsChanged", function (accounts) {
+          const account = accounts && accounts.length ? accounts[0] : "";
+          state.account = account || null;
+          setWalletUI(account);
+        });
+      }
+    })();
+  </script>
 </body>
 </html>

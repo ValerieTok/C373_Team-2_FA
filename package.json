@@ -19,5 +19,8 @@
   "bugs": {
     "url": "https://github.com/ValerieTok/C373_Team-2_FA/issues"
   },
-  "homepage": "https://github.com/ValerieTok/C373_Team-2_FA#readme"
+  "homepage": "https://github.com/ValerieTok/C373_Team-2_FA#readme",
+  "dependencies": {
+    "@metamask/sdk": "^0.34.0"
+  }
 }

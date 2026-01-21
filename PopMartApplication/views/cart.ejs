@@ -1,0 +1,71 @@
+<%- include("partials/header", { title: "Cart" }) %>
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+  <span class="role-tag">Buyer view</span>
+</div>
+
+<style>
+  .cart-layout {
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    gap: 18px;
+  }
+  .cart-side {
+    align-self: start;
+    position: sticky;
+    top: 110px;
+  }
+  @media (max-width: 900px) {
+    .cart-layout {
+      grid-template-columns: 1fr;
+    }
+    .cart-side {
+      position: static;
+    }
+  }
+</style>
+
+<div class="cart-layout">
+  <section class="card fade-in">
+    <h2 style="margin-top:0;">Cart</h2>
+    <p class="muted">Items you plan to checkout.</p>
+    <div class="list">
+    <% if (!cart.length) { %>
+      <p class="muted">Your cart is empty.</p>
+    <% } %>
+    <% let total = 0; %>
+    <% cart.forEach(function(item) { %>
+      <% total += item.priceEth * item.qty; %>
+      <div class="list-item">
+        <img class="thumb" src="<%= item.image %>" alt="Product image" />
+        <div class="stack">
+          <strong><%= item.name %></strong>
+          <span class="pill"><%= item.category %></span>
+          <span class="mono"><%= item.priceEth %> ETH x <%= item.qty %></span>
+          <form action="/cart/remove" method="POST">
+            <input type="hidden" name="productId" value="<%= item.productId %>" />
+            <button class="btn btn-ghost" type="submit">Remove</button>
+          </form>
+        </div>
+      </div>
+    <% }) %>
+    </div>
+    <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+      <strong>Total: <span class="mono"><%= total.toFixed(2) %></span> ETH</strong>
+      <a class="btn btn-alt" href="/checkout">Proceed to checkout</a>
+    </div>
+  </section>
+
+  <aside class="card cart-side">
+    <h3 style="margin-top:0;"></h3>
+    <% if (typeof added !== "undefined" && added) { %>
+      <p class="muted">Want to add more items?</p>
+      <a class="btn btn-outline" href="/">Continue browsing</a>
+    <% } else { %>
+      <p class="muted">Continue browsing to add more items.</p>
+      <a class="btn btn-outline" href="/">Back to listings</a>
+    <% } %>
+  </aside>
+</div>
+
+<%- include("partials/footer") %>

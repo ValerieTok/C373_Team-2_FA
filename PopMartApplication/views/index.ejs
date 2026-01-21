@@ -1,55 +1,65 @@
-<%- include("partials/header", { title: "Marketplace - Listings" }) %>
+<%- include("partials/header", { title: "Marketplace Listings" }) %>
 
-<div class="card">
-  <h2>Product / Service Listings</h2>
-  <p class="muted">
-    Browse listings. Click “View Details” to see more information and purchase using MetaMask.
-  </p>
-
-  <div class="alert">
-    <b>Blockchain features:</b> Payments are held in escrow and only released after delivery confirmation.
-    Ratings can only be submitted after a successful purchase.
+<section class="page-card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+    <span class="role-tag">Buyer view</span>
   </div>
-</div>
+  <div class="listing-head" style="margin-bottom:16px;">
+    <h1 class="listing-title">Listings</h1>
+    <span class="muted" style="text-transform:uppercase; letter-spacing:1px; font-size:12px;">
+      <%= products.length %> items
+    </span>
+  </div>
+  <hr style="border:none; border-top:1px solid #e5e7eb; margin:0 0 18px;" />
 
-<br/>
+  <div class="list">
+    <% products.forEach(function(product) { %>
+      <article class="listing-row">
+        <div class="listing-image">
+          <img src="<%= product.image %>" alt="Product image" />
+        </div>
+        <div>
+          <div class="listing-head">
+            <h2 class="listing-title"><%= product.name %></h2>
+            <span class="mono"><%= product.priceEth %> ETH</span>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
+            <span class="pill"><%= product.category %></span>
+            <% const ratingInfo = ratingsSummary[product.id] || { avg: 0, count: 0 }; %>
+            <span class="pill">
+              Avg rating: <%= ratingInfo.count ? ratingInfo.avg.toFixed(2) : "No ratings" %>
+              <% if (ratingInfo.count) { %> / 5 (<%= ratingInfo.count %>)<% } %>
+            </span>
+            <% if (bestProductId === product.id) { %>
+              <span class="pill">Top rated</span>
+            <% } %>
+          </div>
+          <p class="listing-desc muted"><%= product.shortDesc %></p>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <a class="btn btn-outline" href="/product/<%= product.id %>">View details</a>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <form action="/listings/<%= product.id %>/qty/decrease" method="POST">
+                <button class="btn btn-outline" type="submit">-</button>
+              </form>
+              <input type="number" name="qty" min="1" value="<%= quantities[product.id] %>" style="width:70px;" readonly />
+              <form action="/listings/<%= product.id %>/qty/increase" method="POST">
+                <button class="btn btn-outline" type="submit">+</button>
+              </form>
+            </div>
+            <form action="/cart/add" method="POST" style="display:flex; gap:8px; align-items:center;">
+              <input type="hidden" name="productId" value="<%= product.id %>" />
+              <input type="hidden" name="name" value="<%= product.name %>" />
+              <input type="hidden" name="category" value="<%= product.category %>" />
+              <input type="hidden" name="priceEth" value="<%= product.priceEth %>" />
+              <input type="hidden" name="image" value="<%= product.image %>" />
+              <input type="hidden" name="qty" value="<%= quantities[product.id] %>" />
+              <button class="btn" type="submit">Add to cart</button>
+            </form>
+          </div>
+        </div>
+      </article>
+    <% }) %>
+  </div>
+</section>
 
-<div class="grid">
-  <% for (let i = 0; i < products.length; i++) { %>
-    <div
-      class="card product-card"
-      data-product-id="<%= products[i].id %>"
-      data-seller-address="<%= products[i].sellerAddress || '' %>"
-    >
-      <img class="img" src="<%= products[i].image %>" alt="image"/>
-      <h3 style="margin:10px 0 6px;"><%= products[i].name %></h3>
-      <div class="row">
-        <span class="pill"><%= products[i].category %></span>
-        <span class="pill">Seller: <%= products[i].sellerName %></span>
-      </div>
-      <p class="muted" style="margin:10px 0;"><%= products[i].shortDesc %></p>
-      <p><b>Price:</b> <span class="mono"><%= products[i].priceEth %> ETH</span></p>
-      <div class="row" style="margin:6px 0 10px;">
-        <span class="stars">
-          <span class="star">★</span>
-          <span class="star">★</span>
-          <span class="star">★</span>
-          <span class="star">★</span>
-          <span class="star">★</span>
-        </span>
-        <span class="stars-note">Rating unavailable</span>
-      </div>
-
-      <div class="row">
-        <a class="btn" href="/product/<%= products[i].id %>" style="text-decoration:none; display:inline-block;">
-          View Details
-        </a>
-      </div>
-    </div>
-  <% } %>
-</div>
-
-<%- include("partials/footer", { script: [
-  "https://cdn.jsdelivr.net/npm/web3@4.16.0/dist/web3.min.js",
-  "/js/listingsRatings.js"
-] }) %>
+<%- include("partials/footer") %>

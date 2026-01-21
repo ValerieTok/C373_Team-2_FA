@@ -1,0 +1,42 @@
+<%- include("partials/header", { title: "Checkout" }) %>
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+  <span class="role-tag">Buyer view</span>
+</div>
+
+<section class="card fade-in">
+  <h2 style="margin-top:0;">Checkout</h2>
+  <p class="muted">Submit your order. Seller will confirm shipment, then you can confirm delivery.</p>
+  <form class="stack" action="/checkout" method="POST" id="checkoutForm" data-escrow-checkout="true">
+    <input name="buyerName" type="text" placeholder="Buyer name" required />
+    <input name="buyerEmail" type="email" placeholder="Buyer email" required />
+    <input name="buyerAddress" type="text" placeholder="Shipping address" required />
+    <button class="btn btn-alt" type="submit">Place order</button>
+  </form>
+  <% if (status) { %>
+    <p class="muted" style="margin-top:12px;"><%= status %></p>
+  <% } %>
+</section>
+
+<script id="cartData" type="application/json"><%- JSON.stringify(cart) %></script>
+
+<section class="card fade-in" style="margin-top:18px;">
+  <h2 style="margin-top:0;">Order Preview</h2>
+  <div class="list">
+    <% if (!cart.length) { %>
+      <p class="muted">Add items to the cart to see them here.</p>
+    <% } %>
+    <% cart.forEach(function(item) { %>
+      <div class="list-item">
+        <img class="thumb" src="<%= item.image %>" alt="Product image" />
+        <div class="stack">
+          <strong><%= item.name %></strong>
+          <span class="pill"><%= item.category %></span>
+          <span class="mono"><%= item.priceEth %> ETH x <%= item.qty %></span>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+</section>
+
+<%- include("partials/footer") %>

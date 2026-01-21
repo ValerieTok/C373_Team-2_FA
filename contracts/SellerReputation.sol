@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-/*
-  SellerReputation
-  - Only an approved "escrow contract" can submit ratings.
-  - Each rating is tied to a paid order (orderId) to prevent fake reviews.
-*/
-
 contract SellerReputation {
     address public escrowContract;
 
@@ -26,7 +20,7 @@ contract SellerReputation {
         _;
     }
 
-    // Set escrow contract once (or you can allow updating with owner, but keep simple)
+    // Set escrow contract once
     function setEscrowContract(address _escrow) external {
         require(escrowContract == address(0), "Escrow already set");
         require(_escrow != address(0), "Invalid escrow");
@@ -35,7 +29,6 @@ contract SellerReputation {
     }
 
     function getAverageRating(address seller) external view returns (uint256 avgTimes100) {
-        // return average * 100 to avoid decimals (e.g., 4.25 -> 425)
         if (ratingCount[seller] == 0) return 0;
         return (totalStars[seller] * 100) / ratingCount[seller];
     }

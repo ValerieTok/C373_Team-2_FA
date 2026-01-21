@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 /*
   EscrowPayment
   - Buyer creates order + deposits ETH into escrow
+  - Seller confirms shipment
   - Buyer confirms delivery -> escrow releases ETH to seller
   - After release, buyer can submit rating (stored in SellerReputation)
 */
@@ -22,6 +23,9 @@ contract EscrowPayment {
     struct Order {
         address buyer;
         address seller;
+        uint256 productId;
+        uint256 qty;
+        uint256 unitPriceWei;
         uint256 amount;     // ETH in wei
         bool shipped;
         bool delivered;
@@ -31,10 +35,20 @@ contract EscrowPayment {
 
     uint256 public nextOrderId;
     mapping(uint256 => Order) public orders;
+    mapping(address => uint256[]) private buyerOrders;
+    mapping(address => uint256[]) private sellerOrders;
 
     ISellerReputation public reputation;
 
-    event OrderCreated(uint256 indexed orderId, address indexed buyer, address indexed seller, uint256 amount);
+    event OrderCreated(
+        uint256 indexed orderId,
+        address indexed buyer,
+        address indexed seller,
+        uint256 productId,
+        uint256 qty,
+        uint256 unitPriceWei,
+        uint256 amount
+    );
     event ShipmentConfirmed(uint256 indexed orderId, address indexed seller);
     event DeliveryConfirmed(uint256 indexed orderId, address indexed buyer);
     event PaymentReleased(uint256 indexed orderId, address indexed seller, uint256 amount);
@@ -46,9 +60,17 @@ contract EscrowPayment {
     }
 
     // 1) Buyer creates an order and deposits ETH into escrow
-    function createOrder(address seller) external payable returns (uint256 orderId) {
+    function createOrder(
+        address seller,
+        uint256 productId,
+        uint256 qty,
+        uint256 unitPriceWei
+    ) external payable returns (uint256 orderId) {
         require(seller != address(0), "Invalid seller");
-        require(msg.value > 0, "Must deposit ETH");
+        require(qty > 0, "Quantity must be > 0");
+        require(unitPriceWei > 0, "Unit price must be > 0");
+        uint256 expected = qty * unitPriceWei;
+        require(msg.value == expected, "Incorrect payment amount");
 
         orderId = nextOrderId;
         nextOrderId += 1;
@@ -56,6 +78,9 @@ contract EscrowPayment {
         orders[orderId] = Order({
             buyer: msg.sender,
             seller: seller,
+            productId: productId,
+            qty: qty,
+            unitPriceWei: unitPriceWei,
             amount: msg.value,
             shipped: false,
             delivered: false,
@@ -63,7 +88,10 @@ contract EscrowPayment {
             rated: false
         });
 
-        emit OrderCreated(orderId, msg.sender, seller, msg.value);
+        buyerOrders[msg.sender].push(orderId);
+        sellerOrders[seller].push(orderId);
+
+        emit OrderCreated(orderId, msg.sender, seller, productId, qty, unitPriceWei, msg.value);
     }
 
     // 2) Seller confirms shipment
@@ -118,7 +146,6 @@ contract EscrowPayment {
 
         o.rated = true;
 
-        // Record rating in Reputation contract (verified by escrow)
         reputation.recordRating(orderId, o.seller, o.buyer, stars, comment);
 
         emit RatingSubmitted(orderId, o.seller, o.buyer, stars);
@@ -128,9 +155,39 @@ contract EscrowPayment {
     function getOrder(uint256 orderId)
         external
         view
-        returns (address buyer, address seller, uint256 amountWei, bool shipped, bool delivered, bool paidOut, bool rated)
+        returns (
+            address buyer,
+            address seller,
+            uint256 productId,
+            uint256 qty,
+            uint256 unitPriceWei,
+            uint256 amountWei,
+            bool shipped,
+            bool delivered,
+            bool paidOut,
+            bool rated
+        )
     {
         Order memory o = orders[orderId];
-        return (o.buyer, o.seller, o.amount, o.shipped, o.delivered, o.paidOut, o.rated);
+        return (
+            o.buyer,
+            o.seller,
+            o.productId,
+            o.qty,
+            o.unitPriceWei,
+            o.amount,
+            o.shipped,
+            o.delivered,
+            o.paidOut,
+            o.rated
+        );
+    }
+
+    function getBuyerOrders(address buyer) external view returns (uint256[] memory) {
+        return buyerOrders[buyer];
+    }
+
+    function getSellerOrders(address seller) external view returns (uint256[] memory) {
+        return sellerOrders[seller];
     }
 }
