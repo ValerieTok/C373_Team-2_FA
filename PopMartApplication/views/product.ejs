@@ -1,5 +1,6 @@
 <%- include("partials/header", { title: "Product Details" }) %>
 
+
 <div class="card">
   <div class="row" style="align-items:flex-start;">
     <div style="flex:1; min-width:260px;">
@@ -28,9 +29,21 @@
         When you buy, the payment goes into escrow. After delivery is confirmed, payment is released to seller.
       </p>
 
-      <button class="btn" id="btnBuy" data-price="<%= product.priceEth %>">
+      <button
+        class="btn"
+        id="btnBuy"
+        data-price="<%= product.priceEth %>"
+        data-product-id="<%= product.id %>"
+        data-product-name="<%= product.name %>"
+        data-product-category="<%= product.category %>"
+        data-product-seller="<%= product.sellerName %>"
+        data-product-desc="<%= product.fullDesc %>"
+        data-product-image="<%= product.image %>"
+      >
         Buy with MetaMask
       </button>
+
+      
 
       <p class="muted" id="buyStatus" style="margin-top:10px;"></p>
 
@@ -84,11 +97,22 @@
   <p class="muted">
     Average rating shown as "x.xx / 5". (Example: 4.25)
   </p>
-  <p><b>Average:</b> <span class="mono" id="avgRating">Loading...</span></p>
+  <div class="row">
+    <b>Average:</b>
+    <span class="stars" id="avgRatingStars">
+      <span class="star">★</span>
+      <span class="star">★</span>
+      <span class="star">★</span>
+      <span class="star">★</span>
+      <span class="star">★</span>
+    </span>
+    <span class="stars-note"><span class="mono" id="avgRating">Loading...</span> / 5</span>
+  </div>
   <p><b>Total Ratings:</b> <span class="mono" id="ratingCount">Loading...</span></p>
 </div>
 
 <%- include("partials/footer", { script: [
   "https://cdn.jsdelivr.net/npm/web3@4.16.0/dist/web3.min.js",
-  "/js/productPage.js"
+  "/js/productPage.js",
+  "/js/rolePages.js"
 ] }) %>

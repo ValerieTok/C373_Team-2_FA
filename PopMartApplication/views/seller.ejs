@@ -1,0 +1,111 @@
+<%- include("partials/header", { title: "Seller Dashboard" }) %>
+
+<div
+  class="card"
+  id="sellerPage"
+  data-product-id="<%= product.id %>"
+  data-product-name="<%= product.name %>"
+  data-product-category="<%= product.category %>"
+  data-product-seller="<%= product.sellerName %>"
+  data-product-desc="<%= product.fullDesc %>"
+  data-product-image="<%= product.image %>"
+  data-product-price="<%= product.priceEth %>"
+>
+  <h2>Seller Dashboard</h2>
+  <p class="muted">
+    Confirm shipment, release escrow after delivery, and review buyer feedback.
+  </p>
+
+  <div class="row" style="align-items:flex-start;">
+    <div style="flex:1; min-width:260px;">
+      <img id="sellerProductImage" class="img" style="height:220px;" src="<%= product.image %>" alt="Product image"/>
+    </div>
+
+    <div style="flex:2; min-width:280px;">
+      <h3 id="sellerProductName" style="margin-top:0;"><%= product.name %></h3>
+      <div class="row">
+        <span class="pill" id="sellerProductCategory"><%= product.category %></span>
+        <span class="pill" id="sellerProductSellerName">Seller: <%= product.sellerName %></span>
+      </div>
+      <p class="muted" id="sellerProductDesc" style="margin:10px 0;"><%= product.fullDesc %></p>
+      <p><b>Price:</b> <span class="mono" id="sellerProductPrice"><%= product.priceEth %></span> ETH</p>
+
+      <hr style="border:none; border-top:1px solid #e5e7eb; margin:14px 0;"/>
+
+      <h3>Order Actions</h3>
+      <p class="muted">Use the latest order or load a specific order ID.</p>
+
+      <div class="row" style="margin-top:10px;">
+        <label>Order ID:</label>
+        <input id="sellerOrderIdInput" type="number" min="0" style="padding:8px; border-radius:10px; border:1px solid #e5e7eb; width:120px;">
+        <button class="btn btn2" id="sellerLoadOrder">Load Order</button>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <button class="btn btn2" id="sellerShip" disabled>Confirm Shipment</button>
+        <button class="btn" id="sellerRelease" disabled>Release Payment</button>
+      </div>
+
+      <p class="muted" id="sellerShipStatus" style="margin-top:10px;"></p>
+      <p class="muted" id="sellerReleaseStatus" style="margin-top:6px;"></p>
+      <p class="muted" id="sellerOrderStatus" style="margin-top:6px;"></p>
+
+      <hr style="border:none; border-top:1px solid #e5e7eb; margin:14px 0;"/>
+
+      <h3>Latest Rating</h3>
+      <p class="muted">
+        The most recent rating submitted for your wallet (from on-chain events).
+      </p>
+      <p><b>Stars:</b> <span class="mono" id="sellerLatestRatingStars">-</span></p>
+      <p><b>Comment:</b> <span class="mono" id="sellerLatestRatingComment">Not available</span></p>
+      <p><b>Order ID:</b> <span class="mono" id="sellerLatestRatingOrder">-</span></p>
+      <div class="row">
+        <b>Visual:</b>
+        <span class="stars" id="sellerLatestRatingStarsDisplay">
+          <span class="star">★</span>
+          <span class="star">★</span>
+          <span class="star">★</span>
+          <span class="star">★</span>
+          <span class="star">★</span>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<br/>
+
+<div class="card">
+  <h3>Order Status</h3>
+  <p><b>Order ID:</b> <span class="mono" id="sellerOrderId">Not loaded</span></p>
+  <p><b>Buyer:</b> <span class="mono" id="sellerOrderBuyer">-</span></p>
+  <p><b>Seller:</b> <span class="mono" id="sellerOrderSeller">-</span></p>
+  <p><b>Amount (wei):</b> <span class="mono" id="sellerOrderAmount">-</span></p>
+  <p><b>Status:</b> <span class="mono" id="sellerOrderFlags">-</span></p>
+</div>
+
+<br/>
+
+  <div class="card">
+  <h3>Seller Rating Snapshot</h3>
+  <p class="muted">
+    Average rating shown as "x.xx / 5".
+  </p>
+  <div class="row">
+    <b>Average:</b>
+    <span class="stars" id="sellerAvgRatingStars">
+      <span class="star">★</span>
+      <span class="star">★</span>
+      <span class="star">★</span>
+      <span class="star">★</span>
+      <span class="star">★</span>
+    </span>
+    <span class="stars-note"><span class="mono" id="sellerAvgRating">Loading...</span> / 5</span>
+  </div>
+  <p><b>Total Ratings:</b> <span class="mono" id="sellerRatingCount">Loading...</span></p>
+</div>
+
+<%- include("partials/footer", { script: [
+  "https://cdn.jsdelivr.net/npm/web3@4.16.0/dist/web3.min.js",
+  "/js/rolePages.js"
+] }) %>

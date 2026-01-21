@@ -7,33 +7,123 @@
 
   <!-- Simple styling (you can move to public/styles.css later) -->
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; background: #f6f7fb; }
-    .nav { background: #111827; padding: 14px 18px; display: flex; gap: 14px; align-items: center; }
-    .nav a { color: white; text-decoration: none; font-weight: 600; }
-    .nav a:hover { text-decoration: underline; }
-    .container { max-width: 1100px; margin: 20px auto; padding: 0 16px; }
-    .card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-    .img { width: 100%; height: 160px; object-fit: cover; border-radius: 10px; background: #e5e7eb; }
-    .btn { background: #2563eb; border: none; color: white; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-weight: 700; }
-    .btn:disabled { background: #93c5fd; cursor: not-allowed; }
-    .btn2 { background: #111827; }
-    .pill { display:inline-block; background:#e5e7eb; padding:4px 10px; border-radius:999px; font-size:12px; }
+    :root {
+      --popmart-red: #e5162e;
+      --ink: #111111;
+      --ink-2: #2b2b2b;
+      --paper: #ffffff;
+      --soft: #f3f4f6;
+      --line: #e5e7eb;
+    }
+    body { font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif; margin: 0; background: var(--paper); color: var(--ink); }
+    .nav { background: var(--paper); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 10; }
+    .nav-top { max-width: 1120px; margin: 0 auto; padding: 14px 18px; display:flex; align-items:center; gap:16px; }
+    .nav-search { flex: 1; display:flex; align-items:center; gap:8px; }
+    .nav-search input { width: 100%; max-width: 280px; border:1px solid var(--line); border-radius:999px; padding:8px 14px; }
+    .nav-logo { flex: 1; display:flex; justify-content:center; }
+    .nav-logo span { background: var(--popmart-red); color:#fff; font-weight:800; letter-spacing:1px; padding:6px 10px; border-radius:4px; }
+    .nav-actions { flex: 1; display:flex; justify-content:flex-end; gap:10px; align-items:center; }
+    .nav-links { border-top: 1px solid var(--line); }
+    .nav-links-inner { max-width: 1120px; margin: 0 auto; padding: 10px 18px; display:flex; gap:18px; align-items:center; flex-wrap: wrap; }
+    .nav a { color: var(--ink); text-decoration: none; font-weight: 700; font-size: 13px; letter-spacing: 0.4px; text-transform: uppercase; }
+    .nav a:hover { color: var(--popmart-red); }
+    .container { max-width: 1120px; margin: 22px auto; padding: 0 18px; }
+    .card { background: var(--paper); border-radius: 10px; padding: 16px; border: 1px solid var(--line); box-shadow: 0 6px 16px rgba(0,0,0,0.06); transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease; }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 10px 22px rgba(0,0,0,0.10); border-color: #d1d5db; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .img { width: 100%; height: 170px; object-fit: cover; border-radius: 8px; background: var(--soft); }
+    .btn { background: #111111; border: none; color: white; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+    .btn:hover { background: #000000; }
+    .btn:disabled { background: #9ca3af; cursor: not-allowed; }
+    .btn2 { background: var(--popmart-red); }
+    .btn2:hover { background: #c70f25; }
+    .pill { display:inline-block; background: var(--soft); padding:4px 10px; border-radius:999px; font-size:12px; color: var(--ink-2); }
     .row { display:flex; gap:14px; align-items:center; flex-wrap: wrap; }
     .muted { color:#6b7280; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-    .alert { background:#fff7ed; border:1px solid #fed7aa; padding:10px 12px; border-radius:10px; }
-    @media (max-width: 900px){ .grid { grid-template-columns: 1fr; } }
+    .alert { background:#fff7ed; border:1px solid #fed7aa; padding:12px 14px; border-radius:10px; color:#7c2d12; }
+    .stars { display:inline-flex; gap:4px; align-items:center; font-size:16px; letter-spacing:1px; }
+    .star { color:#d1d5db; }
+    .star.filled { color: #f4c542; }
+    .stars-note { font-size:12px; color:#6b7280; margin-left:6px; }
+    input, textarea { font-family: inherit; }
+    input[type="text"], input[type="number"], textarea { border:1px solid var(--line); border-radius:8px; padding:9px 10px; outline:none; }
+    input[type="text"]:focus, input[type="number"]:focus, textarea:focus { border-color:#9ca3af; box-shadow: 0 0 0 2px rgba(0,0,0,0.08); }
+    .nav-dropdown { position: relative; }
+    .nav-menu { display:none; position:absolute; top:36px; left:0; background:#111827; border:1px solid #1f2937; border-radius:10px; min-width:160px; box-shadow: 0 8px 20px rgba(0,0,0,0.25); z-index:20; }
+    .nav-menu a { display:block; padding:8px 12px; }
+    .nav-dropdown:hover .nav-menu { display:block; }
+    @media (max-width: 900px){
+      .grid { grid-template-columns: 1fr; }
+      .nav-top, .nav-links-inner { flex-direction: column; align-items:flex-start; }
+      .nav-logo { justify-content:flex-start; }
+      .nav-actions { width:100%; justify-content:flex-start; }
+    }
   </style>
 </head>
 <body>
   <div class="nav">
-    <a href="/">Home</a>
-    <a href="/about">About Us</a>
-    <a href="/myOrders">My Orders</a>
-    <span style="flex:1"></span>
-    <button class="btn btn2" id="btnConnect">Connect MetaMask</button>
-    <button class="btn" id="btnDisconnect" style="display:none;">Disconnect</button>
+    <div class="nav-top">
+      <div class="nav-search">
+        <input type="text" placeholder="Search" aria-label="Search"/>
+      </div>
+      <div class="nav-logo">
+        <span>LabubuChain</span>
+      </div>
+      <div class="nav-actions">
+        <button class="btn btn2" id="btnConnect">Connect MetaMask</button>
+        <button class="btn" id="btnDisconnect" style="display:none;">Disconnect</button>
+      </div>
+    </div>
+    <div class="nav-links">
+      <div class="nav-links-inner">
+        <a href="/">Home</a>
+        <a href="/about">About Us</a>
+        <a href="/myOrders">My Orders</a>
+        <a class="nav-link" id="navViewProduct" href="/">View Product</a>
+        <a class="nav-link" id="navBuyer" href="/role/buyer">Buyer</a>
+        <a class="nav-link" id="navSeller" href="/role/seller">Seller</a>
+      </div>
+    </div>
   </div>
 
   <div class="container">
+
+<script>
+  (function () {
+    const buyerLink = document.getElementById("navBuyer");
+    const sellerLink = document.getElementById("navSeller");
+    const viewLink  = document.getElementById("navViewProduct");
+
+    function setLinks(pid) {
+      if (buyerLink) buyerLink.href = `/role/buyer?productId=${pid}`;
+      if (sellerLink) sellerLink.href = `/role/seller?productId=${pid}`;
+      if (viewLink)  viewLink.href  = `/product/${pid}`;
+    }
+
+    // Case 1: currently on /product/:id
+    const m = window.location.pathname.match(/^\/product\/(\d+)/);
+    if (m && m[1]) {
+      const pid = m[1];
+      try { localStorage.setItem("popmartActiveProductId", pid); } catch (e) {}
+      setLinks(pid);
+      return;
+    }
+
+    // Case 2: currently on buyer/seller page with ?productId=
+    const params = new URLSearchParams(window.location.search);
+    const qpid = params.get("productId");
+    if (qpid) {
+      try { localStorage.setItem("popmartActiveProductId", qpid); } catch (e) {}
+      setLinks(qpid);
+      return;
+    }
+
+    // Case 3: fallback to remembered active product
+    let pid = null;
+    try { pid = localStorage.getItem("popmartActiveProductId"); } catch (e) {}
+    if (pid) {
+      setLinks(pid);
+    }
+  })();
+</script>

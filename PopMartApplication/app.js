@@ -12,6 +12,8 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/images", express.static(path.join(__dirname, "images")));
 
+
+
 const products = [
   {
     id: 1,
@@ -70,6 +72,8 @@ const products = [
   },
 ];
 
+const defaultProduct = products[0];
+
 const sampleOrders = [
   { orderId: 101, productName: "Aurora Bloom Figurine", status: "Awaiting Delivery" },
   { orderId: 102, productName: "Neo Koi Limited", status: "Shipped" },
@@ -86,6 +90,30 @@ app.get("/about", (req, res) => {
 
 app.get("/myOrders", (req, res) => {
   res.render("myOrders", { sampleOrders });
+});
+
+// OR if you already have products array in app.js, reuse it.
+app.get("/role/buyer", (req, res) => {
+  const productId = Number(req.query.productId);
+  const product = products.find(p => p.id === productId) || null;
+  res.render("buyer", { product });
+});
+
+app.get("/role/seller", (req, res) => {
+  const productId = req.query.productId;
+
+  if (!productId) {
+    // no context provided; go back to listings (or a default)
+    return res.redirect("/"); 
+  }
+
+  const product = products.find(p => String(p.id) === String(productId)) || null;
+  return res.render("seller", { product });
+});
+
+
+app.get("/product", (req, res) => {
+  res.render("product", { product: defaultProduct });
 });
 
 app.get("/product/:id", (req, res) => {

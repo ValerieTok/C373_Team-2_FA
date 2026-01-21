@@ -15,6 +15,21 @@ function status(id, message) {
   }
 }
 
+function renderStars(containerId, value) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const stars = el.querySelectorAll(".star");
+  const rating = Number(value);
+  const filled = Number.isFinite(rating) ? Math.round(rating) : 0;
+  stars.forEach((star, index) => {
+    if (index < filled) {
+      star.classList.add("filled");
+    } else {
+      star.classList.remove("filled");
+    }
+  });
+}
+
 function requireOrderId() {
   const input = document.getElementById("orderId");
   if (!input || !input.value) return null;
@@ -27,6 +42,49 @@ function getSellerAddress() {
   if (!input) return null;
   const value = (input.value || "").trim();
   return value || null;
+}
+
+function storeOrderContext(orderId, product, sellerAddress) {
+  if (!window.localStorage) return;
+  const payload = {
+    orderId,
+    product,
+    sellerAddress,
+    savedAt: Date.now(),
+  };
+  localStorage.setItem("popmartLastOrder", JSON.stringify(payload));
+  if (orderId !== null && orderId !== undefined) {
+    localStorage.setItem("popmartLastOrderId", String(orderId));
+  }
+}
+
+function sellerKey(productId) {
+  return `popmartSellerByProduct_${productId}`;
+}
+
+function storeSellerForProduct(productId, sellerAddress) {
+  if (!window.localStorage || !productId || !sellerAddress) return;
+  localStorage.setItem(sellerKey(productId), sellerAddress);
+}
+
+function getStoredSeller(productId) {
+  if (!window.localStorage || !productId) return null;
+  const value = localStorage.getItem(sellerKey(productId));
+  return value ? value.trim() : null;
+}
+
+function getProductFromButton(btn) {
+  if (!btn) return null;
+  const product = {
+    id: btn.getAttribute("data-product-id"),
+    name: btn.getAttribute("data-product-name"),
+    category: btn.getAttribute("data-product-category"),
+    sellerName: btn.getAttribute("data-product-seller"),
+    desc: btn.getAttribute("data-product-desc"),
+    image: btn.getAttribute("data-product-image"),
+    priceEth: btn.getAttribute("data-price"),
+  };
+  return product;
 }
 
 async function connectWallet() {
@@ -71,6 +129,13 @@ async function getContracts(web3) {
   ]);
 
   const networkId = await web3.eth.net.getId();
+
+  if (Number(networkId) === 1) {
+    throw new Error(
+      "You are on Ethereum Mainnet (network 1). Switch MetaMask to Ganache/Localhost (RPC http://127.0.0.1:7545), then refresh."
+    );
+  }
+
   const escrowInfo = escrowArtifact.networks[networkId];
   const repInfo = repArtifact.networks[networkId];
 
@@ -95,6 +160,7 @@ async function refreshRating(reputation, seller) {
   const avg = Number(avgTimes100) / 100;
   status("avgRating", Number.isFinite(avg) ? avg.toFixed(2) : "0.00");
   status("ratingCount", count);
+  renderStars("avgRatingStars", avg);
 }
 
 async function refreshOrderStatus(escrow, orderId) {
@@ -124,21 +190,36 @@ async function init() {
 
   if (!buyBtn) return;
 
+  const productId = buyBtn.getAttribute("data-product-id");
+  const sellerInput = document.getElementById("sellerAddress");
+  if (sellerInput && productId) {
+    const storedSeller = getStoredSeller(productId);
+    if (!sellerInput.value && storedSeller) {
+      sellerInput.value = storedSeller;
+    }
+  }
+
   let seller = getSellerAddress();
   const priceEth = buyBtn.getAttribute("data-price");
 
+  // 1) Force MetaMask to connect immediately
+  await connectWallet();
+
+  // 2) Now MetaMask has an active provider context for this site
   const web3 = new Web3(window.ethereum);
+
+  // 3) Now load contracts (netId should be Ganache, not 1)
   const { escrow, reputation } = await getContracts(web3);
 
   if (seller) {
     await refreshRating(reputation, seller);
   }
 
-  const sellerInput = document.getElementById("sellerAddress");
   if (sellerInput) {
     sellerInput.addEventListener("change", () => {
       seller = getSellerAddress();
       if (seller) {
+        storeSellerForProduct(productId, seller);
         refreshRating(reputation, seller).catch(() => {});
       }
     });
@@ -152,6 +233,7 @@ async function init() {
         status("buyStatus", "Enter a seller wallet address.");
         return;
       }
+      storeSellerForProduct(productId, seller);
       status("buyStatus", "Creating order...");
       const receipt = await escrow.methods
         .createOrder(seller)
@@ -170,6 +252,13 @@ async function init() {
       const orderInput = document.getElementById("orderId");
       if (orderInput && Number.isFinite(orderId)) {
         orderInput.value = String(orderId);
+      }
+      if (Number.isFinite(orderId)) {
+      const product = getProductFromButton(buyBtn);
+      if (product && product.id && Number.isFinite(orderId)) {
+        localStorage.setItem(`popmartOrderByProduct_${product.id}`, String(orderId));
+      }
+        storeOrderContext(orderId, product, seller);
       }
       status(
         "buyStatus",
