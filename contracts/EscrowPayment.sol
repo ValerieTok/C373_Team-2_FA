@@ -61,12 +61,10 @@ contract EscrowPayment {
 
     // 1) Buyer creates an order and deposits ETH into escrow
     function createOrder(
-        address seller,
         uint256 productId,
         uint256 qty,
         uint256 unitPriceWei
     ) external payable returns (uint256 orderId) {
-        require(seller != address(0), "Invalid seller");
         require(qty > 0, "Quantity must be > 0");
         require(unitPriceWei > 0, "Unit price must be > 0");
         uint256 expected = qty * unitPriceWei;
@@ -77,7 +75,7 @@ contract EscrowPayment {
 
         orders[orderId] = Order({
             buyer: msg.sender,
-            seller: seller,
+            seller: address(0),
             productId: productId,
             qty: qty,
             unitPriceWei: unitPriceWei,
@@ -89,19 +87,23 @@ contract EscrowPayment {
         });
 
         buyerOrders[msg.sender].push(orderId);
-        sellerOrders[seller].push(orderId);
 
-        emit OrderCreated(orderId, msg.sender, seller, productId, qty, unitPriceWei, msg.value);
+        emit OrderCreated(orderId, msg.sender, address(0), productId, qty, unitPriceWei, msg.value);
     }
 
     // 2) Seller confirms shipment
     function confirmShipment(uint256 orderId) external {
         Order storage o = orders[orderId];
-        require(o.seller == msg.sender, "Only seller can confirm");
         require(o.amount > 0, "Order not found");
         require(!o.shipped, "Already shipped");
         require(!o.paidOut, "Already paid");
 
+        if (o.seller == address(0)) {
+            o.seller = msg.sender;
+            sellerOrders[msg.sender].push(orderId);
+        } else {
+            require(o.seller == msg.sender, "Only seller can confirm");
+        }
         o.shipped = true;
         emit ShipmentConfirmed(orderId, msg.sender);
     }
@@ -124,6 +126,7 @@ contract EscrowPayment {
         require(o.amount > 0, "Order not found");
         require(o.shipped, "Shipment not confirmed");
         require(o.delivered, "Delivery not confirmed");
+        require(o.seller != address(0), "Seller not set");
         require(!o.paidOut, "Already paid");
 
         // Checks-effects-interactions
