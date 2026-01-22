@@ -3,9 +3,11 @@ const express = require("express");
 const multer = require("multer");
 const session = require("express-session");
 
+require("dotenv").config();
+
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DEFAULT_SELLER_WALLET = String(process.env.DEFAULT_SELLER_WALLET || "").trim();
+const DEFAULT_SELLER_WALLET = "0x4F277cC44401946858d16E61838EA1db8F7B3Df7";
 const DEFAULT_BUYER_WALLET = String(process.env.DEFAULT_BUYER_WALLET || "").trim();
 
 app.set("view engine", "ejs");
@@ -46,7 +48,7 @@ let products = [
     name: "Solar Drift Capsule",
     category: "Limited Drop",
     sellerName: "Marketplace Seller",
-    sellerWallet: DEFAULT_SELLER_WALLET,
+    sellerWallet: "0x4F277cC44401946858d16E61838EA1db8F7B3Df7",
     shortDesc: "Heat-washed resin with enamel crest.",
     fullDesc:
       "A glowing capsule figure with layered metallic ink and a numbered base card. Ships in a clear vault sleeve.",
@@ -58,7 +60,7 @@ let products = [
     name: "Koi Circuit Guardian",
     category: "Artist Series",
     sellerName: "Marketplace Seller",
-    sellerWallet: DEFAULT_SELLER_WALLET,
+    sellerWallet: "0x4F277cC44401946858d16E61838EA1db8F7B3Df7",
     shortDesc: "Chrome fins and etched circuit spine.",
     fullDesc:
       "Hand-finished details with micro-etching and a holographic cert. Escrow friendly for high-value trades.",
@@ -70,7 +72,7 @@ let products = [
     name: "Moonlit Parade Trio",
     category: "Collector",
     sellerName: "Marketplace Seller",
-    sellerWallet: DEFAULT_SELLER_WALLET,
+    sellerWallet: "0x4F277cC44401946858d16E61838EA1db8F7B3Df7",
     shortDesc: "Three-piece set with dusk gradients.",
     fullDesc:
       "A trio of parade figures with foil accents and foam-lined tray. Ships insured with tracking.",

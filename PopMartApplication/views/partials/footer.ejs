@@ -76,13 +76,48 @@
         return res.json();
       }
 
-      function resolveAddress(artifact, chainId) {
+      async function resolveAddress(artifact, provider) {
         const networks = artifact.networks || {};
-        const direct = networks[String(chainId)];
-        if (direct && direct.address) return direct.address;
+        const network = await provider.getNetwork();
+        const chainId = String(network.chainId);
+        const networkId = await provider.send("net_version", []).catch(function () {
+          return null;
+        });
+        const direct = networks[chainId];
+        if (direct && direct.address) {
+          return { address: direct.address, chainId, networkId, usedNetworkKey: chainId };
+        }
+        if (networkId && networks[networkId] && networks[networkId].address) {
+          return {
+            address: networks[networkId].address,
+            chainId,
+            networkId,
+            usedNetworkKey: String(networkId),
+          };
+        }
         const keys = Object.keys(networks);
         if (keys.length === 1 && networks[keys[0]].address) {
-          return networks[keys[0]].address;
+          return {
+            address: networks[keys[0]].address,
+            chainId,
+            networkId,
+            usedNetworkKey: String(keys[0]),
+          };
+        }
+        return { address: null, chainId, networkId, usedNetworkKey: null };
+      }
+
+      async function findDeployedAddress(artifact, provider) {
+        const networks = artifact.networks || {};
+        const entries = Object.entries(networks);
+        for (const entry of entries) {
+          const key = entry[0];
+          const info = entry[1];
+          if (!info || !info.address) continue;
+          const code = await provider.getCode(info.address);
+          if (code && code !== "0x") {
+            return { address: info.address, usedNetworkKey: String(key) };
+          }
         }
         return null;
       }
@@ -99,19 +134,73 @@
           state.provider = new window.ethers.providers.Web3Provider(provider);
           state.signer = state.provider.getSigner();
         }
-        const network = await state.provider.getNetwork();
         const artifact = await loadArtifact("/build/EscrowPayment.json");
-        const address = resolveAddress(artifact, network.chainId);
-        if (!address) {
-          throw new Error("Escrow contract not deployed on this network.");
+        const deployment = await resolveAddress(artifact, state.provider);
+        if (!deployment.address) {
+          const suffix = deployment.networkId ? ` (network id ${deployment.networkId})` : "";
+          throw new Error(`Escrow contract not deployed for chain ${deployment.chainId}${suffix}.`);
         }
-        state.contract = new window.ethers.Contract(address, artifact.abi, state.signer);
+        const code = await state.provider.getCode(deployment.address);
+        if (!code || code === "0x") {
+          const discovered = await findDeployedAddress(artifact, state.provider);
+          if (discovered) {
+            deployment.address = discovered.address;
+            deployment.usedNetworkKey = discovered.usedNetworkKey;
+          } else {
+          const suffix = deployment.networkId ? `, network id ${deployment.networkId}` : "";
+          const usedKey = deployment.usedNetworkKey
+            ? ` from artifact network ${deployment.usedNetworkKey}`
+            : "";
+          throw new Error(
+            `Escrow contract not found at ${deployment.address}. You are on chain ${deployment.chainId}${suffix}${usedKey}. Check MetaMask RPC (Ganache 127.0.0.1:7545) or re-deploy.`
+          );
+          }
+        }
+        state.contract = new window.ethers.Contract(
+          deployment.address,
+          artifact.abi,
+          state.signer
+        );
       }
 
       async function connectWallet() {
         const provider = getProvider();
         if (!provider) {
           throw new Error("MetaMask not detected.");
+        }
+        try {
+          await provider.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: "0x1691" }],
+          });
+        } catch (err) {
+          if (err && err.code === 4902) {
+            try {
+              await provider.request({
+                method: "wallet_addEthereumChain",
+                params: [
+                  {
+                    chainId: "0x1691",
+                    chainName: "Ganache 5777",
+                    rpcUrls: ["http://127.0.0.1:7545"],
+                    nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+                  },
+                ],
+              });
+            } catch (addErr) {
+              const message = String(addErr && addErr.message ? addErr.message : "");
+              if (message.includes("same RPC endpoint") || (addErr && addErr.code === -32602)) {
+                await provider.request({
+                  method: "wallet_switchEthereumChain",
+                  params: [{ chainId: "0x539" }],
+                });
+              } else if (addErr && addErr.code !== 4001) {
+                throw addErr;
+              }
+            }
+          } else if (err && err.code !== 4001) {
+            throw err;
+          }
         }
         await provider.request({
           method: "wallet_requestPermissions",
