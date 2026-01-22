@@ -4,8 +4,8 @@ const multer = require("multer");
 const session = require("express-session");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-const DEFAULT_SELLER_WALLET = String(process.env.DEFAULT_SELLER_WALLET || "").trim();
+const PORT = process.env.PORT || 3001;
+let defaultSellerWallet = String(process.env.DEFAULT_SELLER_WALLET || "").trim();
 const DEFAULT_BUYER_WALLET = String(process.env.DEFAULT_BUYER_WALLET || "").trim();
 
 app.set("view engine", "ejs");
@@ -46,7 +46,7 @@ let products = [
     name: "Solar Drift Capsule",
     category: "Limited Drop",
     sellerName: "Marketplace Seller",
-    sellerWallet: DEFAULT_SELLER_WALLET,
+    sellerWallet: defaultSellerWallet,
     shortDesc: "Heat-washed resin with enamel crest.",
     fullDesc:
       "A glowing capsule figure with layered metallic ink and a numbered base card. Ships in a clear vault sleeve.",
@@ -58,7 +58,7 @@ let products = [
     name: "Koi Circuit Guardian",
     category: "Artist Series",
     sellerName: "Marketplace Seller",
-    sellerWallet: DEFAULT_SELLER_WALLET,
+    sellerWallet: defaultSellerWallet,
     shortDesc: "Chrome fins and etched circuit spine.",
     fullDesc:
       "Hand-finished details with micro-etching and a holographic cert. Escrow friendly for high-value trades.",
@@ -70,7 +70,7 @@ let products = [
     name: "Moonlit Parade Trio",
     category: "Collector",
     sellerName: "Marketplace Seller",
-    sellerWallet: DEFAULT_SELLER_WALLET,
+    sellerWallet: defaultSellerWallet,
     shortDesc: "Three-piece set with dusk gradients.",
     fullDesc:
       "A trio of parade figures with foil accents and foam-lined tray. Ships insured with tracking.",
@@ -153,8 +153,23 @@ app.get("/seller", (req, res) => {
     products,
     orders: formattedOrders,
     earningsEth,
-    defaultSellerWallet: DEFAULT_SELLER_WALLET,
+    defaultSellerWallet,
   });
+});
+
+app.post("/seller/wallet", (req, res) => {
+  const nextWallet = String(req.body.sellerWallet || "").trim();
+  const previousWallet = defaultSellerWallet;
+  defaultSellerWallet = nextWallet;
+  if (defaultSellerWallet) {
+    products = products.map((product) => {
+      if (!product.sellerWallet || product.sellerWallet === previousWallet) {
+        return { ...product, sellerWallet: defaultSellerWallet };
+      }
+      return product;
+    });
+  }
+  res.redirect("/seller");
 });
 
 app.post("/seller/listings", upload.single("imageFile"), (req, res) => {
@@ -172,7 +187,7 @@ app.post("/seller/listings", upload.single("imageFile"), (req, res) => {
     name: String(name || "Untitled Listing").trim(),
     category: String(category || "General").trim(),
     sellerName: "Marketplace Seller",
-    sellerWallet: String(sellerWallet || DEFAULT_SELLER_WALLET || "").trim(),
+    sellerWallet: String(sellerWallet || defaultSellerWallet || "").trim(),
     shortDesc: String(shortDesc || "New listing").trim(),
     fullDesc: String(shortDesc || "New listing").trim(),
     priceEth: Number(priceEth || 0),
@@ -237,7 +252,7 @@ app.post("/cart/add", (req, res) => {
       category: String(req.body.category || "General").trim(),
       priceEth: Number(req.body.priceEth || 0),
       sellerName: product ? product.sellerName : "Marketplace Seller",
-      sellerWallet: product ? product.sellerWallet : DEFAULT_SELLER_WALLET,
+      sellerWallet: product ? product.sellerWallet : defaultSellerWallet,
       image: String(req.body.image || "/images/popmart1.png").trim(),
       qty,
     });
@@ -288,7 +303,7 @@ app.post("/checkout", (req, res) => {
       buyerEmail,
       buyerAddress,
       buyerWallet,
-      sellerWallet: item.sellerWallet || DEFAULT_SELLER_WALLET,
+      sellerWallet: item.sellerWallet || defaultSellerWallet,
       escrowOrderId: chainOrder.orderId || null,
       escrowTxHash: chainOrder.txHash || null,
       createdAt,
