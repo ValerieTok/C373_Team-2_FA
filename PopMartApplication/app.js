@@ -7,7 +7,7 @@ require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DEFAULT_SELLER_WALLET = "0x4F277cC44401946858d16E61838EA1db8F7B3Df7";
+const DEFAULT_SELLER_WALLET = String(process.env.DEFAULT_SELLER_WALLET || "").trim();
 const DEFAULT_BUYER_WALLET = String(process.env.DEFAULT_BUYER_WALLET || "").trim();
 
 app.set("view engine", "ejs");
@@ -42,13 +42,13 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-let products = [
+const seedProducts = [
   {
     id: 1,
     name: "Solar Drift Capsule",
     category: "Limited Drop",
     sellerName: "Marketplace Seller",
-    sellerWallet: "0x4F277cC44401946858d16E61838EA1db8F7B3Df7",
+    sellerWallet: DEFAULT_SELLER_WALLET,
     shortDesc: "Heat-washed resin with enamel crest.",
     fullDesc:
       "A glowing capsule figure with layered metallic ink and a numbered base card. Ships in a clear vault sleeve.",
@@ -60,7 +60,7 @@ let products = [
     name: "Koi Circuit Guardian",
     category: "Artist Series",
     sellerName: "Marketplace Seller",
-    sellerWallet: "0x4F277cC44401946858d16E61838EA1db8F7B3Df7",
+    sellerWallet: DEFAULT_SELLER_WALLET,
     shortDesc: "Chrome fins and etched circuit spine.",
     fullDesc:
       "Hand-finished details with micro-etching and a holographic cert. Escrow friendly for high-value trades.",
@@ -72,7 +72,7 @@ let products = [
     name: "Moonlit Parade Trio",
     category: "Collector",
     sellerName: "Marketplace Seller",
-    sellerWallet: "0x4F277cC44401946858d16E61838EA1db8F7B3Df7",
+    sellerWallet: DEFAULT_SELLER_WALLET,
     shortDesc: "Three-piece set with dusk gradients.",
     fullDesc:
       "A trio of parade figures with foil accents and foam-lined tray. Ships insured with tracking.",
@@ -80,6 +80,8 @@ let products = [
     image: "/images/popmart3.png",
   },
 ];
+
+let products = seedProducts;
 
 function nextProductId() {
   return products.reduce((maxId, item) => Math.max(maxId, item.id), 0) + 1;
@@ -174,7 +176,7 @@ app.post("/seller/listings", upload.single("imageFile"), (req, res) => {
     name: String(name || "Untitled Listing").trim(),
     category: String(category || "General").trim(),
     sellerName: "Marketplace Seller",
-    sellerWallet: String(sellerWallet || DEFAULT_SELLER_WALLET || "").trim(),
+    sellerWallet: String(sellerWallet || "").trim(),
     shortDesc: String(shortDesc || "New listing").trim(),
     fullDesc: String(shortDesc || "New listing").trim(),
     priceEth: Number(priceEth || 0),
@@ -239,7 +241,7 @@ app.post("/cart/add", (req, res) => {
       category: String(req.body.category || "General").trim(),
       priceEth: Number(req.body.priceEth || 0),
       sellerName: product ? product.sellerName : "Marketplace Seller",
-      sellerWallet: product ? product.sellerWallet : DEFAULT_SELLER_WALLET,
+      sellerWallet: product ? product.sellerWallet : "",
       image: String(req.body.image || "/images/popmart1.png").trim(),
       qty,
     });
@@ -290,7 +292,7 @@ app.post("/checkout", (req, res) => {
       buyerEmail,
       buyerAddress,
       buyerWallet,
-      sellerWallet: item.sellerWallet || DEFAULT_SELLER_WALLET,
+      sellerWallet: item.sellerWallet || "",
       escrowOrderId: chainOrder.orderId || null,
       escrowTxHash: chainOrder.txHash || null,
       createdAt,

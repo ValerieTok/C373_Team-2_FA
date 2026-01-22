@@ -171,33 +171,21 @@
         try {
           await provider.request({
             method: "wallet_switchEthereumChain",
-            params: [{ chainId: "0x1691" }],
+            params: [{ chainId: "0x539" }],
           });
         } catch (err) {
           if (err && err.code === 4902) {
-            try {
-              await provider.request({
-                method: "wallet_addEthereumChain",
-                params: [
-                  {
-                    chainId: "0x1691",
-                    chainName: "Ganache 5777",
-                    rpcUrls: ["http://127.0.0.1:7545"],
-                    nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
-                  },
-                ],
-              });
-            } catch (addErr) {
-              const message = String(addErr && addErr.message ? addErr.message : "");
-              if (message.includes("same RPC endpoint") || (addErr && addErr.code === -32602)) {
-                await provider.request({
-                  method: "wallet_switchEthereumChain",
-                  params: [{ chainId: "0x539" }],
-                });
-              } else if (addErr && addErr.code !== 4001) {
-                throw addErr;
-              }
-            }
+            await provider.request({
+              method: "wallet_addEthereumChain",
+              params: [
+                {
+                  chainId: "0x539",
+                  chainName: "Ganache 1337",
+                  rpcUrls: ["http://127.0.0.1:7545"],
+                  nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+                },
+              ],
+            });
           } else if (err && err.code !== 4001) {
             throw err;
           }
@@ -240,15 +228,11 @@
         const chainOrders = [];
 
         for (const item of cart) {
-          if (!item.sellerWallet) {
-            throw new Error("Missing seller wallet for " + item.name + ".");
-          }
           const qty = Number(item.qty || 0);
           const unitPriceWei = window.ethers.utils.parseEther(String(item.priceEth || 0));
           const totalWei = unitPriceWei.mul(window.ethers.BigNumber.from(qty));
           const expectedOrderId = await getNextOrderId();
           const tx = await state.contract.createOrder(
-            item.sellerWallet,
             item.productId,
             qty,
             unitPriceWei,
