@@ -2547,12 +2547,12 @@
     "5777": {
       "events": {},
       "links": {},
-      "address": "0x02eBA6ee65B798035edD93A7905CedC886ac8655",
-      "transactionHash": "0xba0a732a1ac62eaa5580725256348e818a9c28b54e4fe55330af151168bf8e53"
+      "address": "0x8800dff6C2bBb9CcDd8B0E4e9f77b8fd86d576ed",
+      "transactionHash": "0x7ad0fba81353affdc6240c2ae0e8b320d38c7496b10977cce3f812aa50aa9160"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2026-01-21T16:43:11.837Z",
+  "updatedAt": "2026-01-22T11:49:53.331Z",
   "devdoc": {
     "kind": "dev",
     "methods": {},

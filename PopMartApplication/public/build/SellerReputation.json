@@ -8965,12 +8965,12 @@
         }
       },
       "links": {},
-      "address": "0x4671462C5cC086161584F63FaaBDD469304489f5",
-      "transactionHash": "0x56c46a406fda090830aa438a1253537ea0bd94112a499ab8f8d21cc0647e9869"
+      "address": "0x83822D1f33d071C2fe77d6b36Ea5e0Ab4F01bcB1",
+      "transactionHash": "0x492edd6a8ef17216b9b21ecca110c53074b43258d4a0203a70f6cf2d52d9c1e1"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2026-01-21T16:43:11.843Z",
+  "updatedAt": "2026-01-22T11:49:53.334Z",
   "devdoc": {
     "kind": "dev",
     "methods": {},

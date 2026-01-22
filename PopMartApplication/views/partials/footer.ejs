@@ -135,6 +135,31 @@
         }
       }
 
+      async function ensureExpectedAccount(expectedWallet) {
+        if (!expectedWallet) return;
+        const provider = getProvider();
+        if (!provider) {
+          throw new Error("MetaMask not detected.");
+        }
+        if (!state.account) {
+          await connectWallet();
+        }
+        if (state.account && state.account.toLowerCase() !== expectedWallet) {
+          await provider.request({
+            method: "wallet_requestPermissions",
+            params: [{ eth_accounts: {} }],
+          });
+          const accounts = await provider.request({ method: "eth_requestAccounts" });
+          state.account = accounts && accounts.length ? accounts[0] : null;
+          setWalletUI(state.account);
+        }
+        if (!state.account || state.account.toLowerCase() !== expectedWallet) {
+          throw new Error(
+            "Switch MetaMask to " + expectedWallet + " before continuing."
+          );
+        }
+      }
+
       async function getNextOrderId() {
         return state.contract.nextOrderId();
       }
@@ -197,8 +222,8 @@
         if (!escrowOrderId) {
           throw new Error("Escrow order ID missing.");
         }
-        if (expectedWallet && state.account && state.account.toLowerCase() !== expectedWallet) {
-          throw new Error("Switch MetaMask to the expected seller/buyer account before continuing.");
+        if (expectedWallet) {
+          await ensureExpectedAccount(expectedWallet);
         }
         if (action === "ship") {
           await (await state.contract.confirmShipment(escrowOrderId)).wait();

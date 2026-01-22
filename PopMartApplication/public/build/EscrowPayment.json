@@ -21506,12 +21506,12 @@
     "5777": {
       "events": {},
       "links": {},
-      "address": "0x1355DCB76B711a444a27299ccaB487061e3258dc",
-      "transactionHash": "0xeac5375e368b41dc0e29c9ce0415bb8e78e572fdfc6e5a9f93275d561c95d9bc"
+      "address": "0x4cC13E6E8D6f3dF65863088BEa31BA3456f15863",
+      "transactionHash": "0x5ee0899309d95a7f81dbdd400adaa20963b9f530173953365a23415d11cc407f"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2026-01-21T16:43:11.820Z",
+  "updatedAt": "2026-01-22T11:49:53.319Z",
   "devdoc": {
     "kind": "dev",
     "methods": {},
