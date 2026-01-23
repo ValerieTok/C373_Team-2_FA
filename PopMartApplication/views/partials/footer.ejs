@@ -8,7 +8,21 @@
       const walletBtn = document.getElementById("connectWalletBtn");
       const walletLabel = document.getElementById("walletAddress");
       const disconnectBtn = document.getElementById("disconnectWalletBtn");
-      const state = { provider: null, signer: null, account: null, contract: null };
+      const sellerVerifyForm = document.getElementById("sellerVerifyForm");
+      const sellerVerificationStatus = document.getElementById("sellerVerificationStatus");
+      const sellerVerifiedBadge = document.getElementById("sellerVerifiedBadge");
+      const sellerLockedNotice = document.getElementById("sellerLockedNotice");
+      const sellerLockTargets = document.querySelectorAll("[data-requires-seller-verified]");
+      const sellerWalletField = document.getElementById("sellerWalletField");
+      const checkoutForm = document.getElementById("checkoutForm");
+      const buyerVerificationHint = document.getElementById("buyerVerificationHint");
+      const state = {
+        provider: null,
+        signer: null,
+        account: null,
+        contract: null,
+        verification: { seller: false, buyer: false },
+      };
       const GAS_LIMIT = 600000;
 
       function getRoleLabel(address) {
@@ -58,6 +72,28 @@
         if (walletBtn) {
           walletBtn.textContent = address ? "Wallet connected" : "Connect wallet";
         }
+        if (sellerWalletField) {
+          sellerWalletField.value = address || "";
+        }
+      }
+
+      function setSellerLockUI(verified) {
+        sellerLockTargets.forEach(function (el) {
+          el.style.display = verified ? "" : "none";
+        });
+        if (sellerLockedNotice) {
+          sellerLockedNotice.style.display = verified ? "none" : "block";
+        }
+        if (sellerVerifiedBadge) {
+          sellerVerifiedBadge.style.display = verified ? "inline-flex" : "none";
+        }
+      }
+
+      function setBuyerVerificationHint(verified) {
+        if (!buyerVerificationHint) return;
+        buyerVerificationHint.textContent = verified
+          ? "Buyer details verified on-chain."
+          : "Add phone + email and sign with MetaMask before checkout.";
       }
 
       function getProvider() {
@@ -200,6 +236,7 @@
         if (!state.contract) {
           await initContract();
         }
+        await fetchVerificationStatus(state.account);
         return state.account;
       }
 
@@ -237,6 +274,51 @@
         }
       }
 
+      async function fetchVerificationStatus(address) {
+        if (!state.contract || !address) {
+          state.verification = { seller: false, buyer: false };
+          setSellerLockUI(false);
+          setBuyerVerificationHint(false);
+          return state.verification;
+        }
+        const info = await state.contract.getVerification(address);
+        const sellerVerified = Boolean(info.sellerVerified);
+        const buyerVerified = Boolean(info.buyerVerified);
+        state.verification = { seller: sellerVerified, buyer: buyerVerified };
+        setSellerLockUI(sellerVerified);
+        setBuyerVerificationHint(buyerVerified);
+        if (sellerVerificationStatus) {
+          sellerVerificationStatus.textContent = sellerVerified
+            ? "Seller verified for " + address
+            : "Not verified yet.";
+        }
+        return state.verification;
+      }
+
+      async function ensureSellerVerification(form) {
+        if (!form) return state.verification;
+        const name = form.querySelector("[name=sellerName]").value.trim();
+        const email = form.querySelector("[name=sellerEmail]").value.trim();
+        const phone = form.querySelector("[name=sellerPhone]").value.trim();
+        if (!name || !email || !phone) {
+          throw new Error("Provide name, email, and phone.");
+        }
+        await ensureReady();
+        if (state.verification.seller) return state.verification;
+        const tx = await state.contract.verifySeller(name, email, phone, { gasLimit: GAS_LIMIT });
+        await tx.wait();
+        return fetchVerificationStatus(state.account);
+      }
+
+      async function ensureBuyerVerification(info) {
+        await ensureReady();
+        const current = await fetchVerificationStatus(state.account);
+        if (current.buyer) return current;
+        const tx = await state.contract.verifyBuyer(info.name, info.email, info.phone, { gasLimit: GAS_LIMIT });
+        await tx.wait();
+        return fetchVerificationStatus(state.account);
+      }
+
       async function getNextOrderId() {
         return state.contract.nextOrderId();
       }
@@ -249,8 +331,14 @@
         }
         const buyerName = form.querySelector("[name=buyerName]").value;
         const buyerEmail = form.querySelector("[name=buyerEmail]").value;
+        const buyerPhone = form.querySelector("[name=buyerPhone]").value;
         const buyerAddress = form.querySelector("[name=buyerAddress]").value;
         const chainOrders = [];
+        await ensureBuyerVerification({
+          name: buyerName,
+          email: buyerEmail,
+          phone: buyerPhone,
+        });
 
         for (const item of cart) {
           const qty = Number(item.qty || 0);
@@ -276,6 +364,7 @@
           body: JSON.stringify({
             buyerName: buyerName,
             buyerEmail: buyerEmail,
+            buyerPhone: buyerPhone,
             buyerAddress: buyerAddress,
             buyerWallet: state.account,
             chainOrders: chainOrders,
@@ -352,6 +441,32 @@
         });
       }
 
+      function bindSellerVerification() {
+        if (!sellerVerifyForm) return;
+        sellerVerifyForm.addEventListener("submit", function (event) {
+          event.preventDefault();
+          const submitBtn = sellerVerifyForm.querySelector("button[type=submit]");
+          const originalText = submitBtn ? submitBtn.textContent : "";
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Verifying...";
+          }
+          ensureSellerVerification(sellerVerifyForm)
+            .then(function () {
+              if (sellerVerificationStatus) {
+                sellerVerificationStatus.textContent = "Seller verified for " + state.account;
+              }
+            })
+            .catch(function (err) { alert(err.message || "Seller verification failed."); })
+            .finally(function () {
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+              }
+            });
+        });
+      }
+
       function bindEscrowActions() {
         const forms = document.querySelectorAll("form[data-escrow-action]");
         forms.forEach(function (form) {
@@ -387,12 +502,18 @@
       if (disconnectBtn) {
         disconnectBtn.addEventListener("click", function () {
           state.account = null;
+          state.verification = { seller: false, buyer: false };
           setWalletUI("");
+          setSellerLockUI(false);
+          setBuyerVerificationHint(false);
         });
       }
 
       bindCheckout();
+      bindSellerVerification();
       bindEscrowActions();
+      setSellerLockUI(false);
+      setBuyerVerificationHint(false);
 
       const provider = getProvider();
       if (provider && typeof provider.request === "function") {
@@ -400,6 +521,8 @@
           const account = accounts && accounts.length ? accounts[0] : "";
           state.account = account || null;
           setWalletUI(account);
+          state.verification = { seller: false, buyer: false };
+          fetchVerificationStatus(account).catch(function () {});
         });
       }
     })();

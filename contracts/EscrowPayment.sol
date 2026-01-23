@@ -20,6 +20,14 @@ interface ISellerReputation {
 }
 
 contract EscrowPayment {
+    struct UserVerification {
+        bool sellerVerified;
+        bool buyerVerified;
+        string name;
+        string email;
+        string phone;
+    }
+
     struct Order {
         address buyer;
         address seller;
@@ -37,6 +45,7 @@ contract EscrowPayment {
     mapping(uint256 => Order) public orders;
     mapping(address => uint256[]) private buyerOrders;
     mapping(address => uint256[]) private sellerOrders;
+    mapping(address => UserVerification) private verifications;
 
     ISellerReputation public reputation;
 
@@ -53,10 +62,74 @@ contract EscrowPayment {
     event DeliveryConfirmed(uint256 indexed orderId, address indexed buyer);
     event PaymentReleased(uint256 indexed orderId, address indexed seller, uint256 amount);
     event RatingSubmitted(uint256 indexed orderId, address indexed seller, address indexed buyer, uint8 stars);
+    event SellerVerified(address indexed account, string name, string email, string phone);
+    event BuyerVerified(address indexed account, string name, string email, string phone);
 
     constructor(address reputationContract) {
         require(reputationContract != address(0), "Invalid reputation address");
         reputation = ISellerReputation(reputationContract);
+    }
+
+    // --- Verification ---
+    function _requireBasicInfo(
+        string calldata name,
+        string calldata email,
+        string calldata phone
+    ) internal pure {
+        require(bytes(name).length > 0, "Name required");
+        require(bytes(email).length > 0, "Email required");
+        require(bytes(phone).length > 0, "Phone required");
+    }
+
+    function verifySeller(
+        string calldata name,
+        string calldata email,
+        string calldata phone
+    ) external {
+        _requireBasicInfo(name, email, phone);
+        UserVerification storage info = verifications[msg.sender];
+        info.name = name;
+        info.email = email;
+        info.phone = phone;
+        info.sellerVerified = true;
+        emit SellerVerified(msg.sender, name, email, phone);
+    }
+
+    function verifyBuyer(
+        string calldata name,
+        string calldata email,
+        string calldata phone
+    ) external {
+        _requireBasicInfo(name, email, phone);
+        UserVerification storage info = verifications[msg.sender];
+        info.name = name;
+        info.email = email;
+        info.phone = phone;
+        info.buyerVerified = true;
+        emit BuyerVerified(msg.sender, name, email, phone);
+    }
+
+    function isSellerVerified(address account) public view returns (bool) {
+        return verifications[account].sellerVerified;
+    }
+
+    function isBuyerVerified(address account) public view returns (bool) {
+        return verifications[account].buyerVerified;
+    }
+
+    function getVerification(address account)
+        external
+        view
+        returns (
+            bool sellerVerified,
+            bool buyerVerified,
+            string memory name,
+            string memory email,
+            string memory phone
+        )
+    {
+        UserVerification memory info = verifications[account];
+        return (info.sellerVerified, info.buyerVerified, info.name, info.email, info.phone);
     }
 
     // 1) Buyer creates an order and deposits ETH into escrow
@@ -65,6 +138,7 @@ contract EscrowPayment {
         uint256 qty,
         uint256 unitPriceWei
     ) external payable returns (uint256 orderId) {
+        require(isBuyerVerified(msg.sender), "Buyer not verified");
         require(qty > 0, "Quantity must be > 0");
         require(unitPriceWei > 0, "Unit price must be > 0");
         uint256 expected = qty * unitPriceWei;
@@ -97,6 +171,7 @@ contract EscrowPayment {
         require(o.amount > 0, "Order not found");
         require(!o.shipped, "Already shipped");
         require(!o.paidOut, "Already paid");
+        require(isSellerVerified(msg.sender), "Seller not verified");
 
         if (o.seller == address(0)) {
             o.seller = msg.sender;

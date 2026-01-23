@@ -8,7 +8,7 @@ require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DEFAULT_SELLER_WALLET = String(
-  process.env.DEFAULT_SELLER_WALLET || "0x05644b2724055e154cB9311E1fDcD2Ff522ba218"
+  process.env.DEFAULT_SELLER_WALLET || "0x6d0996775477283990EBb4D03e54EAabD27e1693"
 ).trim();
 const DEFAULT_BUYER_WALLET = String(process.env.DEFAULT_BUYER_WALLET || "").trim();
 
@@ -171,6 +171,7 @@ app.post("/seller/listings", upload.single("imageFile"), (req, res) => {
     priceEth,
     sellerWallet,
   } = req.body;
+  const sellerWalletAddress = String(sellerWallet || DEFAULT_SELLER_WALLET).trim();
 
   const imagePath = req.file ? `/images/${req.file.filename}` : "/images/popmart1.png";
   const product = {
@@ -178,7 +179,7 @@ app.post("/seller/listings", upload.single("imageFile"), (req, res) => {
     name: String(name || "Untitled Listing").trim(),
     category: String(category || "General").trim(),
     sellerName: "Marketplace Seller",
-    sellerWallet: String(sellerWallet || "").trim(),
+    sellerWallet: sellerWalletAddress,
     shortDesc: String(shortDesc || "New listing").trim(),
     fullDesc: String(shortDesc || "New listing").trim(),
     priceEth: Number(priceEth || 0),
@@ -276,6 +277,7 @@ app.post("/checkout", (req, res) => {
   }
   const buyerName = String(req.body.buyerName || "").trim();
   const buyerEmail = String(req.body.buyerEmail || "").trim();
+  const buyerPhone = String(req.body.buyerPhone || "").trim();
   const buyerAddress = String(req.body.buyerAddress || "").trim();
   const createdAt = new Date().toISOString();
 
@@ -292,6 +294,7 @@ app.post("/checkout", (req, res) => {
       status: "Awaiting Shipment",
       buyerName,
       buyerEmail,
+      buyerPhone,
       buyerAddress,
       buyerWallet,
       sellerWallet: item.sellerWallet || "",

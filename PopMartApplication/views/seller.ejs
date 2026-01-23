@@ -8,7 +8,24 @@
   </div>
 </div>
 
-<div class="grid">
+<section class="card fade-in" id="sellerVerificationCard">
+  <h2 style="margin-top:0;">Seller verification</h2>
+  <p class="muted">Verify your name, email, and phone with MetaMask before listing products.</p>
+  <form class="stack" id="sellerVerifyForm">
+    <input type="text" name="sellerName" placeholder="Full name" required />
+    <input type="email" name="sellerEmail" placeholder="Work email" required />
+    <input type="tel" name="sellerPhone" placeholder="Phone number" required />
+    <button class="btn btn-alt" type="submit">Verify with MetaMask</button>
+    <p class="muted" id="sellerVerificationStatus"></p>
+  </form>
+  <div class="badge" id="sellerVerifiedBadge" style="display:none;">Seller verified</div>
+</section>
+
+<div class="card" id="sellerLockedNotice" style="display:none; margin-bottom:14px;">
+  <p class="muted" style="margin:0;">Complete seller verification to see your listings and orders.</p>
+</div>
+
+<div class="grid" data-requires-seller-verified>
   <section class="card fade-in">
     <h2 style="margin-top:0;">List a Product</h2>
     <p class="muted">Add a new listing that appears on the marketplace.</p>
@@ -18,6 +35,7 @@
       <input type="number" name="priceEth" step="0.01" min="0" placeholder="Price in ETH" required />
       <input type="file" name="imageFile" accept="image/*" required />
       <input type="text" name="shortDesc" placeholder="Short description" required />
+      <input type="hidden" name="sellerWallet" id="sellerWalletField" value="<%= defaultSellerWallet %>" />
       <button class="btn btn-alt" type="submit">Publish Listing</button>
     </form>
   </section>
@@ -39,7 +57,7 @@
   </section>
 </div>
 
-<section class="card fade-in" style="margin-top:18px;">
+<section class="card fade-in" style="margin-top:18px;" data-requires-seller-verified>
   <h2 style="margin-top:0;">Orders to Fulfill</h2>
   <p class="muted">View incoming orders and confirm shipment when you ship.</p>
   <p class="muted" style="margin-bottom:12px;">Latest orders are shown below.</p>
@@ -55,6 +73,7 @@
             <strong>Order <%= order.id %></strong>
             <span class="muted"><%= order.productName %> x <%= order.qty %></span>
             <span class="muted">Buyer: <%= order.buyerName %></span>
+            <span class="muted">Buyer phone: <%= order.buyerPhone || 'Not provided' %></span>
             <span class="muted">Ship to: <%= order.buyerAddress %></span>
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
               <span class="pill"><%= order.category %></span>

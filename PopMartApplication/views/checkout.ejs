@@ -7,9 +7,11 @@
 <section class="card fade-in">
   <h2 style="margin-top:0;">Checkout</h2>
   <p class="muted">Submit your order. Seller will confirm shipment, then you can confirm delivery.</p>
+  <p class="muted" id="buyerVerificationHint">Add phone + email and sign with MetaMask before checkout.</p>
   <form class="stack" action="/checkout" method="POST" id="checkoutForm" data-escrow-checkout="true">
     <input name="buyerName" type="text" placeholder="Buyer name" required />
     <input name="buyerEmail" type="email" placeholder="Buyer email" required />
+    <input name="buyerPhone" type="tel" placeholder="Buyer phone number" required />
     <input name="buyerAddress" type="text" placeholder="Shipping address" required />
     <button class="btn btn-alt" type="submit">Place order</button>
   </form>
