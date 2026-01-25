@@ -101,28 +101,6 @@ function getSellerWallet(req) {
   return String(sessionWallet || DEFAULT_SELLER_WALLET || "").trim();
 }
 
-function applySellerWalletToProducts(wallet) {
-  if (!wallet) return;
-  products = products.map((product) => {
-    if (product.sellerName !== "Marketplace Seller") return product;
-    if (product.sellerWallet && product.sellerWallet !== DEFAULT_SELLER_WALLET) {
-      return product;
-    }
-    return { ...product, sellerWallet: wallet };
-  });
-  cart = cart.map((item) => {
-    if (item.sellerWallet) return item;
-    return { ...item, sellerWallet: wallet };
-  });
-  orders = orders.map((order) => {
-    if (order.sellerWallet) return order;
-    if (order.sellerName && order.sellerName !== "Marketplace Seller") {
-      return order;
-    }
-    return { ...order, sellerWallet: wallet };
-  });
-}
-
 function nextProductId() {
   return products.reduce((maxId, item) => Math.max(maxId, item.id), 0) + 1;
 }
@@ -183,6 +161,22 @@ app.get("/", (req, res) => {
 });
 
 app.get("/seller", (req, res) => {
+  const sellerWallet = getSellerWallet(req);
+  const sellerWalletKey = sellerWallet ? sellerWallet.toLowerCase() : "";
+  const filteredProducts = sellerWalletKey
+    ? products.filter(
+        (product) =>
+          product.sellerWallet &&
+          product.sellerWallet.toLowerCase() === sellerWalletKey
+      )
+    : [];
+  const filteredOrders = sellerWalletKey
+    ? orders.filter(
+        (order) =>
+          order.sellerWallet &&
+          order.sellerWallet.toLowerCase() === sellerWalletKey
+      )
+    : [];
   const formattedOrders = orders.map((order) => ({
     ...order,
     createdAtDisplay: formatTimestamp(order.createdAt),
@@ -190,14 +184,20 @@ app.get("/seller", (req, res) => {
     deliveredAtDisplay: formatTimestamp(order.deliveredAt),
     releasedAtDisplay: formatTimestamp(order.releasedAt),
   }));
-  const earningsEth = formattedOrders
+  const filteredFormattedOrders = formattedOrders.filter(
+    (order) =>
+      sellerWalletKey &&
+      order.sellerWallet &&
+      order.sellerWallet.toLowerCase() === sellerWalletKey
+  );
+  const earningsEth = filteredFormattedOrders
     .filter((order) => order.paymentReleased)
     .reduce((sum, order) => sum + order.priceEth * order.qty, 0);
   res.render("seller", {
-    products,
-    orders: formattedOrders,
+    products: filteredProducts,
+    orders: filteredFormattedOrders,
     earningsEth,
-    defaultSellerWallet: getSellerWallet(req),
+    defaultSellerWallet: sellerWallet,
     listingTemplate: listingTemplates[0] || null,
   });
 });
@@ -207,7 +207,6 @@ app.post("/seller/wallet", (req, res) => {
   if (req.session) {
     req.session.sellerWallet = wallet;
   }
-  applySellerWalletToProducts(wallet);
   res.json({ ok: true });
 });
 
@@ -221,6 +220,9 @@ app.post("/seller/listings", upload.single("imageFile"), (req, res) => {
     image,
   } = req.body;
   const sellerWalletAddress = String(sellerWallet || getSellerWallet(req) || "").trim();
+  if (!sellerWalletAddress) {
+    return res.status(400).send("Seller wallet missing. Connect MetaMask and try again.");
+  }
 
   const imagePath = req.file
     ? `/images/${req.file.filename}`
@@ -294,6 +296,11 @@ app.post("/cart/add", (req, res) => {
   const productId = Number(req.body.productId);
   const qty = Math.max(Number(req.body.qty || 1), 1);
   const product = findProduct(productId);
+  const buyerWallet = String(req.body.buyerWallet || DEFAULT_BUYER_WALLET || "").trim();
+  const sellerWallet = product ? String(product.sellerWallet || "").trim() : "";
+  if (buyerWallet && sellerWallet && buyerWallet.toLowerCase() === sellerWallet.toLowerCase()) {
+    return res.status(400).send("Sellers cannot buy their own products.");
+  }
   const existing = cart.find((item) => item.productId === productId);
   if (existing) {
     existing.qty += qty;
@@ -340,6 +347,22 @@ app.post("/checkout", (req, res) => {
   const buyerPhone = String(req.body.buyerPhone || "").trim();
   const buyerAddress = String(req.body.buyerAddress || "").trim();
   const createdAt = new Date().toISOString();
+  const lowerBuyerWallet = buyerWallet ? buyerWallet.toLowerCase() : "";
+
+  if (lowerBuyerWallet) {
+    const ownProduct = cart.find(
+      (item) =>
+        item.sellerWallet &&
+        String(item.sellerWallet).toLowerCase() === lowerBuyerWallet
+    );
+    if (ownProduct) {
+      const message = "Sellers cannot buy their own products.";
+      if (isJson) {
+        return res.status(400).json({ ok: false, message });
+      }
+      return res.render("checkout", { cart, status: message });
+    }
+  }
 
   const newOrders = cart.map((item, index) => {
     const chainOrder = chainOrders[index] || {};

@@ -11,6 +11,9 @@
       const sellerVerifyForm = document.getElementById("sellerVerifyForm");
       const sellerVerificationStatus = document.getElementById("sellerVerificationStatus");
       const sellerVerifiedBadge = document.getElementById("sellerVerifiedBadge");
+      const sellerVerificationForm = document.getElementById("sellerVerificationForm");
+      const sellerVerifiedSummary = document.getElementById("sellerVerifiedSummary");
+      const sellerVerifiedSummaryText = document.getElementById("sellerVerifiedSummaryText");
       const sellerLockedNotice = document.getElementById("sellerLockedNotice");
       const sellerLockTargets = document.querySelectorAll("[data-requires-seller-verified]");
       const sellerWalletField = document.getElementById("sellerWalletField");
@@ -86,6 +89,12 @@
         }
         if (sellerVerifiedBadge) {
           sellerVerifiedBadge.style.display = verified ? "inline-flex" : "none";
+        }
+        if (sellerVerificationForm) {
+          sellerVerificationForm.style.display = verified ? "none" : "block";
+        }
+        if (sellerVerifiedSummary) {
+          sellerVerifiedSummary.style.display = verified ? "flex" : "none";
         }
       }
 
@@ -237,6 +246,37 @@
         return state.account;
       }
 
+      async function requestAccountSelection() {
+        const provider = getProvider();
+        if (!provider) {
+          throw new Error("MetaMask not detected.");
+        }
+        try {
+          if (provider.request) {
+            await provider.request({
+              method: "wallet_requestPermissions",
+              params: [{ eth_accounts: {} }],
+            });
+          }
+        } catch (err) {
+          if (err && err.code === -32002) {
+            throw new Error("MetaMask request already pending. Open MetaMask to continue.");
+          }
+          if (err && err.code !== 4001) {
+            // Ignore non-critical permission errors and fall back to requesting accounts.
+          }
+        }
+        const accounts = await provider.request({ method: "eth_requestAccounts" });
+        state.account = accounts && accounts.length ? accounts[0] : null;
+        setWalletUI(state.account);
+        if (!state.contract) {
+          await initContract();
+        }
+        await fetchVerificationStatus(state.account);
+        await syncSellerWallet(state.account);
+        return state.account;
+      }
+
       async function restoreWalletSession() {
         const provider = getProvider();
         if (!provider || typeof provider.request !== "function") return;
@@ -306,6 +346,11 @@
             ? "Seller verified for " + address
             : "Not verified yet.";
         }
+        if (sellerVerifiedSummaryText) {
+          sellerVerifiedSummaryText.textContent = sellerVerified
+            ? "Seller verified for " + address
+            : "";
+        }
         return state.verification;
       }
 
@@ -337,11 +382,7 @@
         if (!name || !email || !phone) {
           throw new Error("Provide name, email, and phone.");
         }
-        if (sellerWalletField && sellerWalletField.value) {
-          await ensureExpectedAccount(sellerWalletField.value.toLowerCase());
-        } else {
-          await ensureReady();
-        }
+        await requestAccountSelection();
         if (state.verification.seller) return state.verification;
         const tx = await state.contract.verifySeller(name, email, phone, { gasLimit: GAS_LIMIT });
         await tx.wait();
@@ -366,6 +407,18 @@
         const cart = cartEl ? JSON.parse(cartEl.textContent || "[]") : [];
         if (!cart.length) {
           throw new Error("Your cart is empty.");
+        }
+        if (state.account) {
+          const account = state.account.toLowerCase();
+          const ownItem = cart.find(function (item) {
+            return (
+              item.sellerWallet &&
+              String(item.sellerWallet).toLowerCase() === account
+            );
+          });
+          if (ownItem) {
+            throw new Error("Sellers cannot buy their own products.");
+          }
         }
         const buyerName = form.querySelector("[name=buyerName]").value;
         const buyerEmail = form.querySelector("[name=buyerEmail]").value;
@@ -493,6 +546,21 @@
         if (!form) return;
         form.addEventListener("submit", function (event) {
           event.preventDefault();
+          if (state.account) {
+            const cartEl = document.getElementById("cartData");
+            const cart = cartEl ? JSON.parse(cartEl.textContent || "[]") : [];
+            const account = state.account.toLowerCase();
+            const ownItem = cart.find(function (item) {
+              return (
+                item.sellerWallet &&
+                String(item.sellerWallet).toLowerCase() === account
+              );
+            });
+            if (ownItem) {
+              alert("Sellers cannot buy their own products.");
+              return;
+            }
+          }
           const submitBtn = form.querySelector("button[type=submit]");
           const originalText = submitBtn ? submitBtn.textContent : "";
           if (submitBtn) {
@@ -513,6 +581,14 @@
 
       function bindSellerVerification() {
         if (!sellerVerifyForm) return;
+        const selectSellerBtn = document.getElementById("selectSellerWalletBtn");
+        if (selectSellerBtn) {
+          selectSellerBtn.addEventListener("click", function () {
+            requestAccountSelection().catch(function (err) {
+              alert(err.message || "Unable to select seller wallet.");
+            });
+          });
+        }
         sellerVerifyForm.addEventListener("submit", function (event) {
           event.preventDefault();
           const submitBtn = sellerVerifyForm.querySelector("button[type=submit]");
@@ -561,6 +637,21 @@
         });
       }
 
+      function bindAddToCartGuard() {
+        const forms = document.querySelectorAll('form[action="/cart/add"]');
+        forms.forEach(function (form) {
+          form.addEventListener("submit", function (event) {
+            const sellerWalletInput = form.querySelector('input[name="sellerWallet"]');
+            const sellerWallet = sellerWalletInput ? sellerWalletInput.value.toLowerCase() : "";
+            const account = state.account ? state.account.toLowerCase() : "";
+            if (sellerWallet && account && sellerWallet === account) {
+              event.preventDefault();
+              alert("Sellers cannot buy their own products.");
+            }
+          });
+        });
+      }
+
       if (walletBtn) {
         walletBtn.addEventListener("click", function () {
           connectWallet().catch(function (err) {
@@ -582,6 +673,7 @@
       bindCheckout();
       bindSellerVerification();
       bindEscrowActions();
+      bindAddToCartGuard();
       setSellerLockUI(false);
       setBuyerVerificationHint(false);
       restoreWalletSession().catch(function () {});

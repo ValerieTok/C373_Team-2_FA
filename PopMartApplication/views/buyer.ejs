@@ -21,7 +21,10 @@
       <p class="muted">No orders yet.</p>
     <% } %>
     <% orders.forEach(function(order) { %>
-      <div class="card" style="margin-bottom:12px;">
+      <div class="card" style="margin-bottom:12px; border-color:<%= order.paymentReleased ? '#16a34a' : '#e5e7eb' %>;">
+        <% if (order.paymentReleased) { %>
+          <div class="badge" style="float:right; background:#dcfce7; color:#166534;">Completed</div>
+        <% } %>
         <div class="list-item">
           <img class="thumb" src="<%= order.image || '/images/popmart1.png' %>" alt="Product image" />
           <div class="stack">
@@ -34,11 +37,18 @@
               <span class="mono"><%= order.priceEth %> ETH</span>
               <span class="pill">Escrow ID: <%= order.escrowOrderId || "Pending" %></span>
             </div>
-            <form action="/buyer/orders/<%= order.id %>/deliver" method="POST" data-escrow-action="deliver" data-escrow-order-id="<%= order.escrowOrderId || '' %>" data-expected-wallet="<%= order.buyerWallet || '' %>">
-              <button class="btn btn-alt" type="submit" <%= order.status !== "Shipped" ? "disabled" : "" %>>
-                Confirm delivery
-              </button>
-            </form>
+            <% if (order.status === "Shipped" || order.status === "Delivered") { %>
+              <form action="/buyer/orders/<%= order.id %>/deliver" method="POST" data-escrow-action="deliver" data-escrow-order-id="<%= order.escrowOrderId || '' %>" data-expected-wallet="<%= order.buyerWallet || '' %>">
+                <button
+                  class="btn btn-alt"
+                  type="submit"
+                  <%= order.status !== "Shipped" ? "disabled" : "" %>
+                  style="<%= order.status !== 'Shipped' ? 'background:#e2e8f0; border-color:#e2e8f0; color:#475569;' : '' %><%= order.status === 'Delivered' ? 'background:#16a34a; border-color:#16a34a; color:#f8fafc;' : '' %>"
+                >
+                  <%= order.status === "Delivered" ? "Delivery confirmed" : "Confirm delivery" %>
+                </button>
+              </form>
+            <% } %>
             <% if (order.status === "Delivered" && !order.rated && !order.reviewSkipped) { %>
               <% if (!order.reviewOpen) { %>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -52,13 +62,18 @@
               <% } else { %>
                 <form class="stack" action="/buyer/orders/<%= order.id %>/rate" method="POST" data-escrow-action="rate" data-escrow-order-id="<%= order.escrowOrderId || '' %>" data-expected-wallet="<%= order.buyerWallet || '' %>">
                   <label>Stars (1-5)</label>
-                  <select name="stars" required>
-                    <option value="1">1 star</option>
-                    <option value="2">2 stars</option>
-                    <option value="3">3 stars</option>
-                    <option value="4">4 stars</option>
-                    <option value="5" selected>5 stars</option>
-                  </select>
+                  <div class="star-rating">
+                    <input type="radio" id="order-<%= order.id %>-star-5" name="stars" value="5" checked required />
+                    <label for="order-<%= order.id %>-star-5" title="5 stars">★</label>
+                    <input type="radio" id="order-<%= order.id %>-star-4" name="stars" value="4" />
+                    <label for="order-<%= order.id %>-star-4" title="4 stars">★</label>
+                    <input type="radio" id="order-<%= order.id %>-star-3" name="stars" value="3" />
+                    <label for="order-<%= order.id %>-star-3" title="3 stars">★</label>
+                    <input type="radio" id="order-<%= order.id %>-star-2" name="stars" value="2" />
+                    <label for="order-<%= order.id %>-star-2" title="2 stars">★</label>
+                    <input type="radio" id="order-<%= order.id %>-star-1" name="stars" value="1" />
+                    <label for="order-<%= order.id %>-star-1" title="1 star">★</label>
+                  </div>
                   <label>Comment</label>
                   <textarea name="comment" rows="3" required></textarea>
                   <button class="btn btn-ghost" type="submit">Submit rating</button>

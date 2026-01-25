@@ -11,14 +11,23 @@
 <section class="card fade-in" id="sellerVerificationCard">
   <h2 style="margin-top:0;">Seller verification</h2>
   <p class="muted">Verify your name, email, and phone with MetaMask before listing products.</p>
-  <form class="stack" id="sellerVerifyForm">
-    <input type="text" name="sellerName" placeholder="Full name" required />
-    <input type="email" name="sellerEmail" placeholder="Work email" required />
-    <input type="tel" name="sellerPhone" placeholder="Phone number" required />
-    <button class="btn btn-alt" type="submit">Verify with MetaMask</button>
-    <p class="muted" id="sellerVerificationStatus"></p>
-  </form>
-  <div class="badge" id="sellerVerifiedBadge" style="display:none;">Seller verified</div>
+  <div id="sellerVerificationForm">
+    <button class="btn btn-outline" type="button" id="selectSellerWalletBtn" style="margin-bottom:10px;">
+      Select seller wallet
+    </button>
+    <form class="stack" id="sellerVerifyForm">
+      <input type="text" name="sellerName" placeholder="Full name" required />
+      <input type="email" name="sellerEmail" placeholder="Work email" required />
+      <input type="tel" name="sellerPhone" placeholder="Phone number" required />
+      <button class="btn btn-alt" type="submit">Verify with MetaMask</button>
+      <p class="muted" id="sellerVerificationStatus"></p>
+    </form>
+    <div class="badge" id="sellerVerifiedBadge" style="display:none;">Seller verified</div>
+  </div>
+  <div class="stack" id="sellerVerifiedSummary" style="display:none;">
+    <div class="badge">Seller verified</div>
+    <p class="muted" id="sellerVerifiedSummaryText"></p>
+  </div>
 </section>
 
 <div class="card" id="sellerLockedNotice" style="display:none; margin-bottom:14px;">
@@ -68,7 +77,10 @@
       <p class="muted">No orders yet.</p>
     <% } %>
     <% orders.forEach(function(order) { %>
-      <div class="card" style="margin-bottom:12px;">
+      <div class="card" style="margin-bottom:12px; border-color:<%= order.paymentReleased ? '#16a34a' : '#e5e7eb' %>;">
+        <% if (order.paymentReleased) { %>
+          <div class="badge" style="float:right; background:#dcfce7; color:#166534;">Completed</div>
+        <% } %>
         <div class="list-item">
           <img class="thumb" src="<%= order.image || '/images/popmart1.png' %>" alt="Product image" />
           <div class="stack">
@@ -98,8 +110,13 @@
               </div>
             </div>
             <form action="/seller/orders/<%= order.id %>/ship" method="POST" data-escrow-action="ship" data-escrow-order-id="<%= order.escrowOrderId || '' %>" data-expected-wallet="<%= order.sellerWallet || '' %>">
-              <button class="btn btn-alt" type="submit" <%= order.status !== "Awaiting Shipment" ? "disabled" : "" %>>
-                Confirm shipment
+              <button
+                class="btn btn-alt"
+                type="submit"
+                <%= order.status !== "Awaiting Shipment" ? "disabled" : "" %>
+                style="<%= order.status !== 'Awaiting Shipment' ? 'background:#e2e8f0; border-color:#e2e8f0; color:#475569;' : '' %><%= order.status === 'Shipped' ? 'background:#16a34a; border-color:#16a34a; color:#f8fafc;' : '' %>"
+              >
+                <%= order.status === "Awaiting Shipment" ? "Confirm shipment" : "Shipment confirmed" %>
               </button>
             </form>
           </div>
