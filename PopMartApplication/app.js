@@ -1,4 +1,5 @@
 const path = require("path");
+const fs = require("fs");
 const express = require("express");
 const multer = require("multer");
 const session = require("express-session");
@@ -7,9 +8,7 @@ require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DEFAULT_SELLER_WALLET = String(
-  process.env.DEFAULT_SELLER_WALLET || "0x6d0996775477283990EBb4D03e54EAabD27e1693"
-).trim();
+const DEFAULT_SELLER_WALLET = String(process.env.DEFAULT_SELLER_WALLET || "").trim();
 const DEFAULT_BUYER_WALLET = String(process.env.DEFAULT_BUYER_WALLET || "").trim();
 
 app.set("view engine", "ejs");
@@ -31,6 +30,18 @@ let orders = [];
 let ratings = [];
 let nextOrderId = 1001;
 let draftQuantities = {};
+let listingTemplates = [];
+
+const templatesPath = path.join(__dirname, "data", "listing-templates.json");
+try {
+  const rawTemplates = fs.readFileSync(templatesPath, "utf8");
+  const parsed = JSON.parse(rawTemplates);
+  if (Array.isArray(parsed)) {
+    listingTemplates = parsed;
+  }
+} catch (err) {
+  listingTemplates = [];
+}
 
 const uploadsDir = path.join(__dirname, "images");
 const storage = multer.diskStorage({
@@ -84,6 +95,33 @@ const seedProducts = [
 ];
 
 let products = seedProducts;
+
+function getSellerWallet(req) {
+  const sessionWallet = req && req.session ? String(req.session.sellerWallet || "") : "";
+  return String(sessionWallet || DEFAULT_SELLER_WALLET || "").trim();
+}
+
+function applySellerWalletToProducts(wallet) {
+  if (!wallet) return;
+  products = products.map((product) => {
+    if (product.sellerName !== "Marketplace Seller") return product;
+    if (product.sellerWallet && product.sellerWallet !== DEFAULT_SELLER_WALLET) {
+      return product;
+    }
+    return { ...product, sellerWallet: wallet };
+  });
+  cart = cart.map((item) => {
+    if (item.sellerWallet) return item;
+    return { ...item, sellerWallet: wallet };
+  });
+  orders = orders.map((order) => {
+    if (order.sellerWallet) return order;
+    if (order.sellerName && order.sellerName !== "Marketplace Seller") {
+      return order;
+    }
+    return { ...order, sellerWallet: wallet };
+  });
+}
 
 function nextProductId() {
   return products.reduce((maxId, item) => Math.max(maxId, item.id), 0) + 1;
@@ -159,8 +197,18 @@ app.get("/seller", (req, res) => {
     products,
     orders: formattedOrders,
     earningsEth,
-    defaultSellerWallet: DEFAULT_SELLER_WALLET,
+    defaultSellerWallet: getSellerWallet(req),
+    listingTemplate: listingTemplates[0] || null,
   });
+});
+
+app.post("/seller/wallet", (req, res) => {
+  const wallet = String(req.body.sellerWallet || "").trim();
+  if (req.session) {
+    req.session.sellerWallet = wallet;
+  }
+  applySellerWalletToProducts(wallet);
+  res.json({ ok: true });
 });
 
 app.post("/seller/listings", upload.single("imageFile"), (req, res) => {
@@ -170,10 +218,13 @@ app.post("/seller/listings", upload.single("imageFile"), (req, res) => {
     shortDesc,
     priceEth,
     sellerWallet,
+    image,
   } = req.body;
-  const sellerWalletAddress = String(sellerWallet || DEFAULT_SELLER_WALLET).trim();
+  const sellerWalletAddress = String(sellerWallet || getSellerWallet(req) || "").trim();
 
-  const imagePath = req.file ? `/images/${req.file.filename}` : "/images/popmart1.png";
+  const imagePath = req.file
+    ? `/images/${req.file.filename}`
+    : String(image || "/images/popmart1.png").trim();
   const product = {
     id: nextProductId(),
     name: String(name || "Untitled Listing").trim(),
@@ -207,6 +258,15 @@ app.post("/listings/:id/qty/decrease", (req, res) => {
 
 app.post("/seller/orders/:id/ship", (req, res) => {
   const orderId = Number(req.params.id);
+  const order = orders.find((item) => item.id === orderId);
+  const sessionWallet = getSellerWallet(req).toLowerCase();
+  const orderWallet = order && order.sellerWallet ? order.sellerWallet.toLowerCase() : "";
+  if (!order || !orderWallet || !sessionWallet || orderWallet !== sessionWallet) {
+    if (req.is("application/json")) {
+      return res.status(403).json({ ok: false, message: "Seller wallet mismatch." });
+    }
+    return res.status(403).send("Seller wallet mismatch.");
+  }
   orders = orders.map((order) =>
     order.id === orderId && order.status === "Awaiting Shipment"
       ? { ...order, status: "Shipped", shippedAt: new Date().toISOString() }

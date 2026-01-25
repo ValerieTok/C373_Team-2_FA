@@ -226,10 +226,6 @@
             throw err;
           }
         }
-        await provider.request({
-          method: "wallet_requestPermissions",
-          params: [{ eth_accounts: {} }],
-        });
         const accounts = await provider.request({ method: "eth_requestAccounts" });
         state.account = accounts && accounts.length ? accounts[0] : null;
         setWalletUI(state.account);
@@ -237,7 +233,28 @@
           await initContract();
         }
         await fetchVerificationStatus(state.account);
+        await syncSellerWallet(state.account);
         return state.account;
+      }
+
+      async function restoreWalletSession() {
+        const provider = getProvider();
+        if (!provider || typeof provider.request !== "function") return;
+        const accounts = await provider.request({ method: "eth_accounts" });
+        const account = accounts && accounts.length ? accounts[0] : "";
+        state.account = account || null;
+        setWalletUI(account);
+        if (account) {
+          if (!state.contract) {
+            await initContract();
+          }
+          await fetchVerificationStatus(account);
+          await syncSellerWallet(account);
+        } else {
+          state.verification = { seller: false, buyer: false };
+          setSellerLockUI(false);
+          setBuyerVerificationHint(false);
+        }
       }
 
       async function ensureReady() {
@@ -259,10 +276,6 @@
           await connectWallet();
         }
         if (state.account && state.account.toLowerCase() !== expectedWallet) {
-          await provider.request({
-            method: "wallet_requestPermissions",
-            params: [{ eth_accounts: {} }],
-          });
           const accounts = await provider.request({ method: "eth_requestAccounts" });
           state.account = accounts && accounts.length ? accounts[0] : null;
           setWalletUI(state.account);
@@ -272,6 +285,7 @@
             "Switch MetaMask to " + expectedWallet + " before continuing."
           );
         }
+        await syncSellerWallet(state.account);
       }
 
       async function fetchVerificationStatus(address) {
@@ -295,6 +309,26 @@
         return state.verification;
       }
 
+      async function syncSellerWallet(address) {
+        if (!address) return;
+        await fetch("/seller/wallet", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: "sellerWallet=" + encodeURIComponent(address),
+        });
+      }
+
+      function normalizeRpcError(err) {
+        if (!err) return "";
+        const message =
+          (err.data && err.data.message) ||
+          (err.error && err.error.message) ||
+          err.reason ||
+          err.message ||
+          "";
+        return message.replace("execution reverted: ", "").trim();
+      }
+
       async function ensureSellerVerification(form) {
         if (!form) return state.verification;
         const name = form.querySelector("[name=sellerName]").value.trim();
@@ -303,7 +337,11 @@
         if (!name || !email || !phone) {
           throw new Error("Provide name, email, and phone.");
         }
-        await ensureReady();
+        if (sellerWalletField && sellerWalletField.value) {
+          await ensureExpectedAccount(sellerWalletField.value.toLowerCase());
+        } else {
+          await ensureReady();
+        }
         if (state.verification.seller) return state.verification;
         const tx = await state.contract.verifySeller(name, email, phone, { gasLimit: GAS_LIMIT });
         await tx.wait();
@@ -341,6 +379,11 @@
         });
 
         for (const item of cart) {
+          if (!item.sellerWallet || !window.ethers.utils.isAddress(item.sellerWallet)) {
+            throw new Error(
+              "Missing or invalid seller wallet for " + item.name + ". Ask the seller to reconnect."
+            );
+          }
           const qty = Number(item.qty || 0);
           const unitPriceWei = window.ethers.utils.parseEther(String(item.priceEth || 0));
           const totalWei = unitPriceWei.mul(window.ethers.BigNumber.from(qty));
@@ -384,18 +427,45 @@
         if (!escrowOrderId) {
           throw new Error("Escrow order ID missing.");
         }
+        if (action === "ship" && !expectedWallet) {
+          throw new Error("Seller wallet missing for this order. Ask the seller to reconnect.");
+        }
         if (expectedWallet) {
           await ensureExpectedAccount(expectedWallet);
         }
         if (action === "ship") {
-          await (await state.contract.confirmShipment(escrowOrderId)).wait();
+          const verification = await fetchVerificationStatus(state.account);
+          if (!verification.seller) {
+            throw new Error("Seller not verified. Verify with MetaMask first.");
+          }
+        }
+        if (action === "ship") {
+          try {
+            const chainOrder = await state.contract.getOrder(escrowOrderId);
+            if (!chainOrder.shipped) {
+              await (await state.contract.confirmShipment(escrowOrderId)).wait();
+            }
+          } catch (err) {
+            const reason = normalizeRpcError(err);
+            throw new Error(reason || "Shipment confirmation failed.");
+          }
         } else if (action === "deliver") {
-          await (await state.contract.confirmDelivery(escrowOrderId)).wait();
-          await (await state.contract.releasePayment(escrowOrderId)).wait();
+          try {
+            await (await state.contract.confirmDelivery(escrowOrderId)).wait();
+            await (await state.contract.releasePayment(escrowOrderId)).wait();
+          } catch (err) {
+            const reason = normalizeRpcError(err);
+            throw new Error(reason || "Delivery confirmation failed.");
+          }
         } else if (action === "rate") {
           const stars = Number(form.querySelector("[name=stars]").value || 5);
           const comment = form.querySelector("[name=comment]").value || "";
-          await (await state.contract.submitRating(escrowOrderId, stars, comment)).wait();
+          try {
+            await (await state.contract.submitRating(escrowOrderId, stars, comment)).wait();
+          } catch (err) {
+            const reason = normalizeRpcError(err);
+            throw new Error(reason || "Rating submission failed.");
+          }
         }
 
         const payload =
@@ -514,6 +584,7 @@
       bindEscrowActions();
       setSellerLockUI(false);
       setBuyerVerificationHint(false);
+      restoreWalletSession().catch(function () {});
 
       const provider = getProvider();
       if (provider && typeof provider.request === "function") {

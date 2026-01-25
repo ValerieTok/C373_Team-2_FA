@@ -30,11 +30,13 @@
     <h2 style="margin-top:0;">List a Product</h2>
     <p class="muted">Add a new listing that appears on the marketplace.</p>
     <form action="/seller/listings" method="POST" class="stack" enctype="multipart/form-data">
-      <input type="text" name="name" placeholder="Product name" required />
-      <input type="text" name="category" placeholder="Category" required />
-      <input type="number" name="priceEth" step="0.01" min="0" placeholder="Price in ETH" required />
-      <input type="file" name="imageFile" accept="image/*" required />
-      <input type="text" name="shortDesc" placeholder="Short description" required />
+      <% const template = listingTemplate || {}; %>
+      <input type="text" name="name" placeholder="Product name" value="<%= template.name || '' %>" required />
+      <input type="text" name="category" placeholder="Category" value="<%= template.category || '' %>" required />
+      <input type="number" name="priceEth" step="0.01" min="0" placeholder="Price in ETH" value="<%= template.priceEth != null ? template.priceEth : '' %>" required />
+      <input type="file" name="imageFile" accept="image/*" />
+      <input type="hidden" name="image" value="<%= template.image || '' %>" />
+      <input type="text" name="shortDesc" placeholder="Short description" value="<%= template.shortDesc || '' %>" required />
       <input type="hidden" name="sellerWallet" id="sellerWalletField" value="<%= defaultSellerWallet %>" />
       <button class="btn btn-alt" type="submit">Publish Listing</button>
     </form>
