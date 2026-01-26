@@ -1,11 +1,14 @@
 const path = require("path");
+const fs = require("fs");
 const express = require("express");
 const multer = require("multer");
 const session = require("express-session");
 
+require("dotenv").config();
+
 const app = express();
-const PORT = process.env.PORT || 3001;
-let defaultSellerWallet = String(process.env.DEFAULT_SELLER_WALLET || "").trim();
+const PORT = process.env.PORT || 3000;
+const DEFAULT_SELLER_WALLET = String(process.env.DEFAULT_SELLER_WALLET || "").trim();
 const DEFAULT_BUYER_WALLET = String(process.env.DEFAULT_BUYER_WALLET || "").trim();
 
 app.set("view engine", "ejs");
@@ -27,6 +30,18 @@ let orders = [];
 let ratings = [];
 let nextOrderId = 1001;
 let draftQuantities = {};
+let listingTemplates = [];
+
+const templatesPath = path.join(__dirname, "data", "listing-templates.json");
+try {
+  const rawTemplates = fs.readFileSync(templatesPath, "utf8");
+  const parsed = JSON.parse(rawTemplates);
+  if (Array.isArray(parsed)) {
+    listingTemplates = parsed;
+  }
+} catch (err) {
+  listingTemplates = [];
+}
 
 const uploadsDir = path.join(__dirname, "images");
 const storage = multer.diskStorage({
@@ -40,13 +55,13 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-let products = [
+const seedProducts = [
   {
     id: 1,
     name: "Solar Drift Capsule",
     category: "Limited Drop",
     sellerName: "Marketplace Seller",
-    sellerWallet: defaultSellerWallet,
+    sellerWallet: DEFAULT_SELLER_WALLET,
     shortDesc: "Heat-washed resin with enamel crest.",
     fullDesc:
       "A glowing capsule figure with layered metallic ink and a numbered base card. Ships in a clear vault sleeve.",
@@ -58,7 +73,7 @@ let products = [
     name: "Koi Circuit Guardian",
     category: "Artist Series",
     sellerName: "Marketplace Seller",
-    sellerWallet: defaultSellerWallet,
+    sellerWallet: DEFAULT_SELLER_WALLET,
     shortDesc: "Chrome fins and etched circuit spine.",
     fullDesc:
       "Hand-finished details with micro-etching and a holographic cert. Escrow friendly for high-value trades.",
@@ -70,7 +85,7 @@ let products = [
     name: "Moonlit Parade Trio",
     category: "Collector",
     sellerName: "Marketplace Seller",
-    sellerWallet: defaultSellerWallet,
+    sellerWallet: DEFAULT_SELLER_WALLET,
     shortDesc: "Three-piece set with dusk gradients.",
     fullDesc:
       "A trio of parade figures with foil accents and foam-lined tray. Ships insured with tracking.",
@@ -78,6 +93,13 @@ let products = [
     image: "/images/popmart3.png",
   },
 ];
+
+let products = seedProducts;
+
+function getSellerWallet(req) {
+  const sessionWallet = req && req.session ? String(req.session.sellerWallet || "") : "";
+  return String(sessionWallet || DEFAULT_SELLER_WALLET || "").trim();
+}
 
 function nextProductId() {
   return products.reduce((maxId, item) => Math.max(maxId, item.id), 0) + 1;
@@ -139,6 +161,22 @@ app.get("/", (req, res) => {
 });
 
 app.get("/seller", (req, res) => {
+  const sellerWallet = getSellerWallet(req);
+  const sellerWalletKey = sellerWallet ? sellerWallet.toLowerCase() : "";
+  const filteredProducts = sellerWalletKey
+    ? products.filter(
+        (product) =>
+          product.sellerWallet &&
+          product.sellerWallet.toLowerCase() === sellerWalletKey
+      )
+    : [];
+  const filteredOrders = sellerWalletKey
+    ? orders.filter(
+        (order) =>
+          order.sellerWallet &&
+          order.sellerWallet.toLowerCase() === sellerWalletKey
+      )
+    : [];
   const formattedOrders = orders.map((order) => ({
     ...order,
     createdAtDisplay: formatTimestamp(order.createdAt),
@@ -146,30 +184,30 @@ app.get("/seller", (req, res) => {
     deliveredAtDisplay: formatTimestamp(order.deliveredAt),
     releasedAtDisplay: formatTimestamp(order.releasedAt),
   }));
-  const earningsEth = formattedOrders
+  const filteredFormattedOrders = formattedOrders.filter(
+    (order) =>
+      sellerWalletKey &&
+      order.sellerWallet &&
+      order.sellerWallet.toLowerCase() === sellerWalletKey
+  );
+  const earningsEth = filteredFormattedOrders
     .filter((order) => order.paymentReleased)
     .reduce((sum, order) => sum + order.priceEth * order.qty, 0);
   res.render("seller", {
-    products,
-    orders: formattedOrders,
+    products: filteredProducts,
+    orders: filteredFormattedOrders,
     earningsEth,
-    defaultSellerWallet,
+    defaultSellerWallet: sellerWallet,
+    listingTemplate: listingTemplates[0] || null,
   });
 });
 
 app.post("/seller/wallet", (req, res) => {
-  const nextWallet = String(req.body.sellerWallet || "").trim();
-  const previousWallet = defaultSellerWallet;
-  defaultSellerWallet = nextWallet;
-  if (defaultSellerWallet) {
-    products = products.map((product) => {
-      if (!product.sellerWallet || product.sellerWallet === previousWallet) {
-        return { ...product, sellerWallet: defaultSellerWallet };
-      }
-      return product;
-    });
+  const wallet = String(req.body.sellerWallet || "").trim();
+  if (req.session) {
+    req.session.sellerWallet = wallet;
   }
-  res.redirect("/seller");
+  res.json({ ok: true });
 });
 
 app.post("/seller/listings", upload.single("imageFile"), (req, res) => {
@@ -179,15 +217,22 @@ app.post("/seller/listings", upload.single("imageFile"), (req, res) => {
     shortDesc,
     priceEth,
     sellerWallet,
+    image,
   } = req.body;
+  const sellerWalletAddress = String(sellerWallet || getSellerWallet(req) || "").trim();
+  if (!sellerWalletAddress) {
+    return res.status(400).send("Seller wallet missing. Connect MetaMask and try again.");
+  }
 
-  const imagePath = req.file ? `/images/${req.file.filename}` : "/images/popmart1.png";
+  const imagePath = req.file
+    ? `/images/${req.file.filename}`
+    : String(image || "/images/popmart1.png").trim();
   const product = {
     id: nextProductId(),
     name: String(name || "Untitled Listing").trim(),
     category: String(category || "General").trim(),
     sellerName: "Marketplace Seller",
-    sellerWallet: String(sellerWallet || defaultSellerWallet || "").trim(),
+    sellerWallet: sellerWalletAddress,
     shortDesc: String(shortDesc || "New listing").trim(),
     fullDesc: String(shortDesc || "New listing").trim(),
     priceEth: Number(priceEth || 0),
@@ -215,6 +260,15 @@ app.post("/listings/:id/qty/decrease", (req, res) => {
 
 app.post("/seller/orders/:id/ship", (req, res) => {
   const orderId = Number(req.params.id);
+  const order = orders.find((item) => item.id === orderId);
+  const sessionWallet = getSellerWallet(req).toLowerCase();
+  const orderWallet = order && order.sellerWallet ? order.sellerWallet.toLowerCase() : "";
+  if (!order || !orderWallet || !sessionWallet || orderWallet !== sessionWallet) {
+    if (req.is("application/json")) {
+      return res.status(403).json({ ok: false, message: "Seller wallet mismatch." });
+    }
+    return res.status(403).send("Seller wallet mismatch.");
+  }
   orders = orders.map((order) =>
     order.id === orderId && order.status === "Awaiting Shipment"
       ? { ...order, status: "Shipped", shippedAt: new Date().toISOString() }
@@ -242,6 +296,11 @@ app.post("/cart/add", (req, res) => {
   const productId = Number(req.body.productId);
   const qty = Math.max(Number(req.body.qty || 1), 1);
   const product = findProduct(productId);
+  const buyerWallet = String(req.body.buyerWallet || DEFAULT_BUYER_WALLET || "").trim();
+  const sellerWallet = product ? String(product.sellerWallet || "").trim() : "";
+  if (buyerWallet && sellerWallet && buyerWallet.toLowerCase() === sellerWallet.toLowerCase()) {
+    return res.status(400).send("Sellers cannot buy their own products.");
+  }
   const existing = cart.find((item) => item.productId === productId);
   if (existing) {
     existing.qty += qty;
@@ -252,7 +311,7 @@ app.post("/cart/add", (req, res) => {
       category: String(req.body.category || "General").trim(),
       priceEth: Number(req.body.priceEth || 0),
       sellerName: product ? product.sellerName : "Marketplace Seller",
-      sellerWallet: product ? product.sellerWallet : defaultSellerWallet,
+      sellerWallet: product ? product.sellerWallet : "",
       image: String(req.body.image || "/images/popmart1.png").trim(),
       qty,
     });
@@ -285,8 +344,25 @@ app.post("/checkout", (req, res) => {
   }
   const buyerName = String(req.body.buyerName || "").trim();
   const buyerEmail = String(req.body.buyerEmail || "").trim();
+  const buyerPhone = String(req.body.buyerPhone || "").trim();
   const buyerAddress = String(req.body.buyerAddress || "").trim();
   const createdAt = new Date().toISOString();
+  const lowerBuyerWallet = buyerWallet ? buyerWallet.toLowerCase() : "";
+
+  if (lowerBuyerWallet) {
+    const ownProduct = cart.find(
+      (item) =>
+        item.sellerWallet &&
+        String(item.sellerWallet).toLowerCase() === lowerBuyerWallet
+    );
+    if (ownProduct) {
+      const message = "Sellers cannot buy their own products.";
+      if (isJson) {
+        return res.status(400).json({ ok: false, message });
+      }
+      return res.render("checkout", { cart, status: message });
+    }
+  }
 
   const newOrders = cart.map((item, index) => {
     const chainOrder = chainOrders[index] || {};
@@ -301,9 +377,10 @@ app.post("/checkout", (req, res) => {
       status: "Awaiting Shipment",
       buyerName,
       buyerEmail,
+      buyerPhone,
       buyerAddress,
       buyerWallet,
-      sellerWallet: item.sellerWallet || defaultSellerWallet,
+      sellerWallet: item.sellerWallet || "",
       escrowOrderId: chainOrder.orderId || null,
       escrowTxHash: chainOrder.txHash || null,
       createdAt,

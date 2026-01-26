@@ -256,6 +256,24 @@
       background: #111827;
       border-radius: 999px;
     }
+    .star-rating {
+      display: inline-flex;
+      flex-direction: row-reverse;
+      gap: 6px;
+      font-size: 20px;
+    }
+    .star-rating input {
+      display: none;
+    }
+    .star-rating label {
+      cursor: pointer;
+      color: #cbd5f5;
+    }
+    .star-rating input:checked ~ label,
+    .star-rating label:hover,
+    .star-rating label:hover ~ label {
+      color: #f59e0b;
+    }
     @media (max-width: 900px) {
       .listing-row { grid-template-columns: 1fr; }
       .grid { grid-template-columns: 1fr; }
