@@ -30,6 +30,10 @@
               Avg rating: <%= ratingInfo.count ? ratingInfo.avg.toFixed(2) : "No ratings" %>
               <% if (ratingInfo.count) { %> / 5 (<%= ratingInfo.count %>)<% } %>
             </span>
+            <% const shipInfo = shipTimeSummary[product.id] || { avgDisplay: "Pending", count: 0 }; %>
+            <span class="pill">
+              Avg ship time: <%= shipInfo.count ? shipInfo.avgDisplay : "Pending" %>
+            </span>
             <% if (bestProductId === product.id) { %>
               <span class="pill">Top rated</span>
             <% } %>

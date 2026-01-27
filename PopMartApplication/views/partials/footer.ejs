@@ -19,6 +19,10 @@
       const sellerWalletField = document.getElementById("sellerWalletField");
       const checkoutForm = document.getElementById("checkoutForm");
       const buyerVerificationHint = document.getElementById("buyerVerificationHint");
+      const sellerPageRoot = document.getElementById("sellerVerificationCard");
+      const buyerActionForm = document.querySelector(
+        'form[data-escrow-action="deliver"], form[data-escrow-action="rate"]'
+      );
       const state = {
         provider: null,
         signer: null,
@@ -27,6 +31,28 @@
         verification: { seller: false, buyer: false },
       };
       const GAS_LIMIT = 600000;
+      const STORAGE_KEYS = {
+        seller: "popmartSellerWallet",
+        buyer: "popmartBuyerWallet",
+      };
+
+      function isSellerPage() {
+        return Boolean(sellerPageRoot);
+      }
+
+      function isBuyerPage() {
+        return Boolean(buyerActionForm);
+      }
+
+      function loadPreferredWallet(role) {
+        if (!window.localStorage) return "";
+        return String(window.localStorage.getItem(STORAGE_KEYS[role]) || "");
+      }
+
+      function rememberWallet(role, address) {
+        if (!window.localStorage || !address) return;
+        window.localStorage.setItem(STORAGE_KEYS[role], address);
+      }
 
       function getRoleLabel(address) {
         if (!address) return "";
@@ -238,6 +264,13 @@
         const accounts = await provider.request({ method: "eth_requestAccounts" });
         state.account = accounts && accounts.length ? accounts[0] : null;
         setWalletUI(state.account);
+        if (state.account) {
+          if (isSellerPage()) {
+            rememberWallet("seller", state.account);
+          } else if (isBuyerPage() || checkoutForm) {
+            rememberWallet("buyer", state.account);
+          }
+        }
         if (!state.contract) {
           await initContract();
         }
@@ -269,6 +302,13 @@
         const accounts = await provider.request({ method: "eth_requestAccounts" });
         state.account = accounts && accounts.length ? accounts[0] : null;
         setWalletUI(state.account);
+        if (state.account) {
+          if (isSellerPage()) {
+            rememberWallet("seller", state.account);
+          } else if (isBuyerPage() || checkoutForm) {
+            rememberWallet("buyer", state.account);
+          }
+        }
         if (!state.contract) {
           await initContract();
         }
@@ -356,6 +396,9 @@
 
       async function syncSellerWallet(address) {
         if (!address) return;
+        if (isSellerPage()) {
+          rememberWallet("seller", address);
+        }
         await fetch("/seller/wallet", {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -469,6 +512,9 @@
         const payload = await response.json().catch(function () { return {}; });
         if (!response.ok) {
           throw new Error(payload.message || "Checkout failed.");
+        }
+        if (state.account) {
+          rememberWallet("buyer", state.account);
         }
         window.location.href = payload.redirect || "/buyer";
       }
@@ -678,6 +724,31 @@
       setBuyerVerificationHint(false);
       restoreWalletSession().catch(function () {});
 
+      async function autoPromptPreferredWallet() {
+        const provider = getProvider();
+        if (!provider) return;
+        const preferred = isSellerPage()
+          ? loadPreferredWallet("seller")
+          : isBuyerPage()
+            ? loadPreferredWallet("buyer")
+            : "";
+        if (!preferred) return;
+        const accounts = await provider.request({ method: "eth_accounts" });
+        const current = accounts && accounts.length ? accounts[0] : "";
+        if (current && current.toLowerCase() === preferred.toLowerCase()) {
+          state.account = current;
+          setWalletUI(current);
+          return;
+        }
+        try {
+          await requestAccountSelection();
+          if (state.account && state.account.toLowerCase() !== preferred.toLowerCase()) {
+            await ensureExpectedAccount(preferred.toLowerCase());
+          }
+        } catch (err) {
+          // Ignore auto-prompt errors; user can connect manually.
+        }
+      }
       const provider = getProvider();
       if (provider && typeof provider.request === "function") {
         provider.on("accountsChanged", function (accounts) {
@@ -686,6 +757,18 @@
           setWalletUI(account);
           state.verification = { seller: false, buyer: false };
           fetchVerificationStatus(account).catch(function () {});
+          if (isSellerPage()) {
+            if (account) {
+              rememberWallet("seller", account);
+              syncSellerWallet(account)
+                .catch(function () {})
+                .finally(function () {
+                  window.location.reload();
+                });
+            } else {
+              window.location.reload();
+            }
+          }
         });
       }
     })();

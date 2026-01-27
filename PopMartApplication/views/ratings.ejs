@@ -21,6 +21,7 @@
             <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
               <span class="pill">Buyer: <%= rating.buyerName || "Buyer" %></span>
               <span class="pill">Order <%= rating.orderId %></span>
+              <span class="pill"><%= rating.createdAtDisplay || "Pending" %></span>
             </div>
             <strong><%= rating.stars %> stars</strong>
             <span class="muted"><%= rating.comment || "No comment provided." %></span>

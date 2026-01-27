@@ -122,6 +122,17 @@ function formatTimestamp(value) {
   });
 }
 
+function formatDurationMs(durationMs, scaleSecondsToMinutes = 1) {
+  if (!Number.isFinite(durationMs) || durationMs <= 0) return "Pending";
+  const scaledMinutes = Math.round((durationMs / 1000) * scaleSecondsToMinutes);
+  if (scaledMinutes < 60) {
+    return `${scaledMinutes} min`;
+  }
+  const hours = Math.floor(scaledMinutes / 60);
+  const minutes = scaledMinutes % 60;
+  return `${hours}h ${minutes.toString().padStart(2, "0")}m`;
+}
+
 function buildRatingsSummary(items, allRatings) {
   const summary = {};
   items.forEach((product) => {
@@ -132,6 +143,32 @@ function buildRatingsSummary(items, allRatings) {
         ? 0
         : list.reduce((sum, rating) => sum + Number(rating.stars || 0), 0) / count;
     summary[product.id] = { avg, count };
+  });
+  return summary;
+}
+
+function buildAvgShipTimeByProduct(items, allOrders) {
+  const summary = {};
+  items.forEach((product) => {
+    const durations = allOrders
+      .filter((order) => order.productId === product.id && order.createdAt && order.shippedAt)
+      .map((order) => {
+        const created = new Date(order.createdAt).getTime();
+        const shipped = new Date(order.shippedAt).getTime();
+        if (Number.isNaN(created) || Number.isNaN(shipped)) return null;
+        const diff = shipped - created;
+        return diff >= 0 ? diff : null;
+      })
+      .filter((diff) => diff !== null);
+    const avgMs =
+      durations.length > 0
+        ? durations.reduce((sum, diff) => sum + diff, 0) / durations.length
+        : null;
+    summary[product.id] = {
+      avgMs,
+      avgDisplay: formatDurationMs(avgMs, 10),
+      count: durations.length,
+    };
   });
   return summary;
 }
@@ -147,6 +184,7 @@ app.get("/", (req, res) => {
     quantities[product.id] = draftQuantities[product.id] || 1;
   });
   const ratingsSummary = buildRatingsSummary(products, ratings);
+  const shipTimeSummary = buildAvgShipTimeByProduct(products, orders);
   let bestProductId = null;
   let bestScore = -1;
   products.forEach((product) => {
@@ -157,12 +195,27 @@ app.get("/", (req, res) => {
       bestProductId = product.id;
     }
   });
-  res.render("index", { products, quantities, ratingsSummary, bestProductId });
+  res.render("index", {
+    products,
+    quantities,
+    ratingsSummary,
+    shipTimeSummary,
+    bestProductId,
+  });
 });
 
 app.get("/seller", (req, res) => {
   const sellerWallet = getSellerWallet(req);
   const sellerWalletKey = sellerWallet ? sellerWallet.toLowerCase() : "";
+  const userListings = products.filter((product) => product.isUserListing);
+  const hasUserListings = userListings.length > 0;
+  const sellerAccess =
+    !hasUserListings ||
+    userListings.some(
+      (product) =>
+        product.sellerWallet &&
+        product.sellerWallet.toLowerCase() === sellerWalletKey
+    );
   const filteredProducts = sellerWalletKey
     ? products.filter(
         (product) =>
@@ -194,11 +247,12 @@ app.get("/seller", (req, res) => {
     .filter((order) => order.paymentReleased)
     .reduce((sum, order) => sum + order.priceEth * order.qty, 0);
   res.render("seller", {
-    products: filteredProducts,
-    orders: filteredFormattedOrders,
-    earningsEth,
+    products: sellerAccess ? filteredProducts : [],
+    orders: sellerAccess ? filteredFormattedOrders : [],
+    earningsEth: sellerAccess ? earningsEth : 0,
     defaultSellerWallet: sellerWallet,
     listingTemplate: listingTemplates[0] || null,
+    sellerAccess,
   });
 });
 
@@ -237,6 +291,7 @@ app.post("/seller/listings", upload.single("imageFile"), (req, res) => {
     fullDesc: String(shortDesc || "New listing").trim(),
     priceEth: Number(priceEth || 0),
     image: imagePath,
+    isUserListing: true,
   };
 
   products = [product, ...products];
@@ -406,7 +461,9 @@ app.get("/product/:id", (req, res) => {
   if (!product) {
     return res.status(404).send("Product not found");
   }
-  const productRatings = ratings.filter((rating) => rating.productId === productId);
+  const productRatings = ratings
+    .filter((rating) => rating.productId === productId)
+    .map((rating) => ({ ...rating, createdAtDisplay: formatTimestamp(rating.createdAt) }));
   return res.render("product", { product, ratings: productRatings });
 });
 
@@ -416,7 +473,9 @@ app.get("/ratings/:id", (req, res) => {
   if (!product) {
     return res.status(404).send("Product not found");
   }
-  const productRatings = ratings.filter((rating) => rating.productId === productId);
+  const productRatings = ratings
+    .filter((rating) => rating.productId === productId)
+    .map((rating) => ({ ...rating, createdAtDisplay: formatTimestamp(rating.createdAt) }));
   return res.render("ratings", { product, ratings: productRatings });
 });
 

@@ -9,31 +9,38 @@
 </div>
 
 <section class="card fade-in" id="sellerVerificationCard">
-  <h2 style="margin-top:0;">Seller verification</h2>
-  <p class="muted">Verify your name, email, and phone with MetaMask before listing products.</p>
-  <div id="sellerVerificationForm">
-    <button class="btn btn-outline" type="button" id="selectSellerWalletBtn" style="margin-bottom:10px;">
-      Select seller wallet
-    </button>
-    <form class="stack" id="sellerVerifyForm">
-      <input type="text" name="sellerName" placeholder="Full name" required />
-      <input type="email" name="sellerEmail" placeholder="Work email" required />
-      <input type="tel" name="sellerPhone" placeholder="Phone number" required />
-      <button class="btn btn-alt" type="submit">Verify with MetaMask</button>
-      <p class="muted" id="sellerVerificationStatus"></p>
-    </form>
-    <div class="badge" id="sellerVerifiedBadge" style="display:none;">Seller verified</div>
-  </div>
-  <div class="stack" id="sellerVerifiedSummary" style="display:none;">
-    <div class="badge">Seller verified</div>
-    <p class="muted" id="sellerVerifiedSummaryText"></p>
-  </div>
+  <% if (!sellerAccess) { %>
+    <h2 style="margin-top:0;">Seller access locked</h2>
+    <p class="muted">Connect the wallet that published the listing to access seller tools.</p>
+    <button class="btn btn-outline" type="button" id="selectSellerWalletBtn">Select seller wallet</button>
+  <% } else { %>
+    <h2 style="margin-top:0;">Seller verification</h2>
+    <p class="muted">Verify your name, email, and phone with MetaMask before listing products.</p>
+    <div id="sellerVerificationForm">
+      <button class="btn btn-outline" type="button" id="selectSellerWalletBtn" style="margin-bottom:10px;">
+        Select seller wallet
+      </button>
+      <form class="stack" id="sellerVerifyForm">
+        <input type="text" name="sellerName" placeholder="Full name" required />
+        <input type="email" name="sellerEmail" placeholder="Work email" required />
+        <input type="tel" name="sellerPhone" placeholder="Phone number" required />
+        <button class="btn btn-alt" type="submit">Verify with MetaMask</button>
+        <p class="muted" id="sellerVerificationStatus"></p>
+      </form>
+      <div class="badge" id="sellerVerifiedBadge" style="display:none;">Seller verified</div>
+    </div>
+    <div class="stack" id="sellerVerifiedSummary" style="display:none;">
+      <div class="badge">Seller verified</div>
+      <p class="muted" id="sellerVerifiedSummaryText"></p>
+    </div>
+  <% } %>
 </section>
 
 <div class="card" id="sellerLockedNotice" style="display:none; margin-bottom:14px;">
   <p class="muted" style="margin:0;">Complete seller verification to see your listings and orders.</p>
 </div>
 
+<% if (sellerAccess) { %>
 <div class="grid" data-requires-seller-verified>
   <section class="card fade-in">
     <h2 style="margin-top:0;">List a Product</h2>
@@ -125,5 +132,6 @@
     <% }) %>
   </div>
 </section>
+<% } %>
 
 <%- include("partials/footer") %>
