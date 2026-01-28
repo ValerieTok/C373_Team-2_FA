@@ -468,11 +468,14 @@
         const buyerPhone = form.querySelector("[name=buyerPhone]").value;
         const buyerAddress = form.querySelector("[name=buyerAddress]").value;
         const chainOrders = [];
+        const orderReceipts = [];
         await ensureBuyerVerification({
           name: buyerName,
           email: buyerEmail,
           phone: buyerPhone,
         });
+        const network = await state.provider.getNetwork();
+        const chainId = network.chainId;
 
         for (const item of cart) {
           if (!item.sellerWallet || !window.ethers.utils.isAddress(item.sellerWallet)) {
@@ -491,9 +494,25 @@
             { value: totalWei }
           );
           const receipt = await tx.wait();
+          const orderHash = window.ethers.utils.solidityKeccak256(
+            ["address", "address", "uint256", "uint256", "uint256", "uint256", "uint256"],
+            [state.account, item.sellerWallet, item.productId, qty, unitPriceWei, expectedOrderId, chainId]
+          );
+          const notarizeTx = await state.contract.notarizePurchase(
+            orderHash,
+            item.productId,
+            qty,
+            unitPriceWei
+          );
+          const notarizeReceipt = await notarizeTx.wait();
           chainOrders.push({
             orderId: String(expectedOrderId),
             txHash: receipt.transactionHash,
+          });
+          orderReceipts.push({
+            orderHash: orderHash,
+            escrowOrderId: String(expectedOrderId),
+            notarizeTxHash: notarizeReceipt.transactionHash,
           });
         }
 
@@ -507,6 +526,7 @@
             buyerAddress: buyerAddress,
             buyerWallet: state.account,
             chainOrders: chainOrders,
+            orderReceipts: orderReceipts,
           }),
         });
         const payload = await response.json().catch(function () { return {}; });
@@ -678,6 +698,40 @@
                   submitBtn.disabled = false;
                   submitBtn.textContent = originalText;
                 }
+            });
+          });
+        });
+      }
+
+      function bindReceiptVerification() {
+        const buttons = document.querySelectorAll("[data-receipt-verify]");
+        buttons.forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            const hash = String(btn.dataset.orderHash || "");
+            const card = btn.closest("div");
+            const statusEl = card ? card.querySelector("[data-verify-status]") : null;
+            const proofForm = btn.closest("div") && btn.closest("div").parentElement
+              ? btn.closest("div").parentElement.querySelector("form[data-proof-upload]")
+              : null;
+            if (!hash) return;
+            if (statusEl) statusEl.textContent = "Verifying...";
+            ensureReady()
+              .then(function () {
+                return state.contract.orderHashBuyer(hash);
+              })
+              .then(function (buyer) {
+                if (buyer && buyer !== window.ethers.constants.AddressZero) {
+                  if (statusEl) statusEl.textContent = "Verified on-chain.";
+                  if (proofForm) {
+                    const submitBtn = proofForm.querySelector("button[type=submit]");
+                    if (submitBtn) submitBtn.disabled = false;
+                  }
+                } else if (statusEl) {
+                  statusEl.textContent = "Not verified on-chain.";
+                }
+              })
+              .catch(function (err) {
+                if (statusEl) statusEl.textContent = err.message || "Verification failed.";
               });
           });
         });
@@ -719,6 +773,7 @@
       bindCheckout();
       bindSellerVerification();
       bindEscrowActions();
+      bindReceiptVerification();
       bindAddToCartGuard();
       setSellerLockUI(false);
       setBuyerVerificationHint(false);

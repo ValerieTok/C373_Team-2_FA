@@ -72,6 +72,8 @@
     const web3 = RoleManager.getWeb3();
     const contract = RoleManager.getContract();
     const chainOrders = [];
+    const orderReceipts = [];
+    const chainId = Number(await web3.eth.getChainId());
 
     for (const item of cart) {
       if (!item.sellerWallet) {
@@ -90,9 +92,26 @@
       const receipt = await contract.methods
         .createOrder(item.sellerWallet, item.productId, qty, unitPriceWei)
         .send({ from: account, value: totalWei });
+      const orderHash = web3.utils.soliditySha3(
+        { type: "address", value: account },
+        { type: "address", value: item.sellerWallet },
+        { type: "uint256", value: item.productId },
+        { type: "uint256", value: qty },
+        { type: "uint256", value: unitPriceWei },
+        { type: "uint256", value: expectedOrderId },
+        { type: "uint256", value: chainId }
+      );
+      const notarizeReceipt = await contract.methods
+        .notarizePurchase(orderHash, item.productId, qty, unitPriceWei)
+        .send({ from: account });
       chainOrders.push({
         orderId: String(expectedOrderId),
         txHash: receipt.transactionHash,
+      });
+      orderReceipts.push({
+        orderHash: orderHash,
+        escrowOrderId: String(expectedOrderId),
+        notarizeTxHash: notarizeReceipt.transactionHash,
       });
     }
 
@@ -105,6 +124,7 @@
         buyerAddress: buyerAddress,
         buyerWallet: account,
         chainOrders: chainOrders,
+        orderReceipts: orderReceipts,
       }),
     });
     const payload = await response.json().catch(function () { return {}; });
@@ -193,7 +213,7 @@
           })
           .finally(function () {
             disableButton(submitBtn, false);
-          });
+        });
       });
     });
   }

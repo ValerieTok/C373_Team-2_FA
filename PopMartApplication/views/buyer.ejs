@@ -52,6 +52,48 @@
                 </button>
               </form>
             <% } %>
+            <% if (order.status === "Delivered") { %>
+              <div style="margin-top:10px; padding:10px 12px; border:1px dashed #e2e8f0; border-radius:12px;">
+                <strong>Verify receipt + upload delivery proof</strong>
+                <p class="muted" style="margin:6px 0 0;">
+                  Verify the on-chain receipt before uploading delivery proof.
+                </p>
+                <div style="margin-top:8px;">
+                  <div class="muted">Order hash: <span class="mono"><%= order.orderHash || "Pending" %></span></div>
+                  <% if (order.notarizeTxHash) { %>
+                    <div class="muted">Notarize tx: <span class="mono"><%= order.notarizeTxHash %></span></div>
+                  <% } %>
+                  <button
+                    class="btn btn-outline"
+                    type="button"
+                    data-receipt-verify
+                    data-order-hash="<%= order.orderHash || '' %>"
+                    <%= order.orderHash ? "" : "disabled" %>
+                  >
+                    Verify receipt
+                  </button>
+                  <span class="muted" data-verify-status style="margin-left:6px;"></span>
+                </div>
+                <% if (order.deliveryProofFile) { %>
+                  <a class="btn btn-ghost" style="margin-top:8px;" href="<%= order.deliveryProofFile %>" target="_blank" rel="noopener">
+                    View delivery proof
+                  </a>
+                <% } else { %>
+                  <form
+                    class="stack"
+                    action="/buyer/orders/<%= order.id %>/proof-delivered"
+                    method="POST"
+                    enctype="multipart/form-data"
+                    data-proof-upload
+                  >
+                    <input type="hidden" name="buyerWallet" value="<%= order.buyerWallet || '' %>" />
+                    <input type="file" name="proofFile" accept="image/*" required />
+                    <button class="btn btn-ghost" type="submit" disabled>Upload delivery proof</button>
+                    <span class="muted">Verify the receipt to enable upload.</span>
+                  </form>
+                <% } %>
+              </div>
+            <% } %>
             <% if (order.status === "Delivered" && !order.rated && !order.reviewSkipped) { %>
               <% if (!order.reviewOpen) { %>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">

@@ -18,6 +18,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/images", express.static(path.join(__dirname, "images")));
+app.use("/proofs", express.static(path.join(__dirname, "uploads", "proofs")));
 app.use(
   session({
     secret: "popmart-market-session",
@@ -57,6 +58,21 @@ const storage = multer.diskStorage({
   },
 });
 const upload = multer({ storage });
+const proofsDir = path.join(__dirname, "uploads", "proofs");
+fs.mkdirSync(proofsDir, { recursive: true });
+const proofStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, proofsDir),
+  filename: (req, file, cb) => {
+    const safeName = String(file.originalname || "proof")
+      .replace(/\s+/g, "-")
+      .replace(/[^a-zA-Z0-9.\-_]/g, "");
+    cb(null, `${Date.now()}-${safeName}`);
+  },
+});
+const uploadProof = multer({
+  storage: proofStorage,
+  limits: { fileSize: 8 * 1024 * 1024 },
+});
 
 const seedProducts = [
   {
@@ -417,6 +433,35 @@ app.post("/seller/orders/:id/ship", (req, res) => {
   res.redirect("/seller");
 });
 
+app.post("/seller/orders/:id/proof-shipped", uploadProof.single("proofFile"), (req, res) => {
+  const orderId = Number(req.params.id);
+  const order = orders.find((item) => item.id === orderId);
+  const sessionWallet = getSellerWallet(req).toLowerCase();
+  const orderWallet = order && order.sellerWallet ? order.sellerWallet.toLowerCase() : "";
+  if (!order || !orderWallet || !sessionWallet || orderWallet !== sessionWallet) {
+    return res.status(403).send("Seller wallet mismatch.");
+  }
+  if (order.status !== "Shipped" && order.status !== "Delivered") {
+    return res.status(400).send("Order is not marked as shipped yet.");
+  }
+  if (!order.orderHash) {
+    return res.status(400).send("Receipt not verified for this order.");
+  }
+  if (order.shipmentProofFile) {
+    return res.status(400).send("Shipment proof already uploaded.");
+  }
+  if (!req.file || !req.file.mimetype || !req.file.mimetype.startsWith("image/")) {
+    return res.status(400).send("Please upload an image file.");
+  }
+  const proofFile = `/proofs/${req.file.filename}`;
+  orders = orders.map((item) =>
+    item.id === orderId
+      ? { ...item, shipmentProofFile: proofFile, shipmentProofAt: new Date().toISOString() }
+      : item
+  );
+  res.redirect("/seller");
+});
+
 app.get("/buyer", (req, res) => {
   res.render("buyer", { orders });
 });
@@ -472,6 +517,7 @@ app.get("/checkout", (req, res) => {
 app.post("/checkout", (req, res) => {
   const isJson = req.is("application/json");
   const chainOrders = Array.isArray(req.body.chainOrders) ? req.body.chainOrders : [];
+  const orderReceipts = Array.isArray(req.body.orderReceipts) ? req.body.orderReceipts : [];
   const buyerWallet = String(req.body.buyerWallet || DEFAULT_BUYER_WALLET || "").trim();
   if (!cart.length) {
     if (isJson) {
@@ -503,6 +549,9 @@ app.post("/checkout", (req, res) => {
 
   const newOrders = cart.map((item, index) => {
     const chainOrder = chainOrders[index] || {};
+    const receipt = orderReceipts[index] || {};
+    const orderHash = String(receipt.orderHash || "").trim();
+    const notarizeTxHash = String(receipt.notarizeTxHash || "").trim();
     return {
       id: nextOrderId++,
       productId: item.productId,
@@ -520,12 +569,18 @@ app.post("/checkout", (req, res) => {
       sellerWallet: item.sellerWallet || "",
       escrowOrderId: chainOrder.orderId || null,
       escrowTxHash: chainOrder.txHash || null,
+      orderHash: orderHash || null,
+      notarizeTxHash: notarizeTxHash || null,
       createdAt,
       rated: false,
       reviewOpen: false,
       reviewSkipped: false,
       paymentReleased: false,
       releasedAt: null,
+      shipmentProofFile: null,
+      shipmentProofAt: null,
+      deliveryProofFile: null,
+      deliveryProofAt: null,
       sellerName: item.sellerName || "Marketplace Seller",
     };
   });
@@ -697,6 +752,37 @@ app.post("/buyer/orders/:id/deliver", (req, res) => {
   if (req.is("application/json")) {
     return res.json({ ok: true });
   }
+  res.redirect("/buyer");
+});
+
+app.post("/buyer/orders/:id/proof-delivered", uploadProof.single("proofFile"), (req, res) => {
+  const orderId = Number(req.params.id);
+  const order = orders.find((item) => item.id === orderId);
+  if (!order) {
+    return res.status(404).send("Order not found.");
+  }
+  if (order.status !== "Delivered") {
+    return res.status(400).send("Order is not delivered yet.");
+  }
+  if (!order.orderHash) {
+    return res.status(400).send("Receipt not verified for this order.");
+  }
+  if (order.deliveryProofFile) {
+    return res.status(400).send("Delivery proof already uploaded.");
+  }
+  const buyerWallet = String(req.body.buyerWallet || "").trim().toLowerCase();
+  if (buyerWallet && order.buyerWallet && buyerWallet !== order.buyerWallet.toLowerCase()) {
+    return res.status(403).send("Buyer wallet mismatch.");
+  }
+  if (!req.file || !req.file.mimetype || !req.file.mimetype.startsWith("image/")) {
+    return res.status(400).send("Please upload an image file.");
+  }
+  const proofFile = `/proofs/${req.file.filename}`;
+  orders = orders.map((item) =>
+    item.id === orderId
+      ? { ...item, deliveryProofFile: proofFile, deliveryProofAt: new Date().toISOString() }
+      : item
+  );
   res.redirect("/buyer");
 });
 

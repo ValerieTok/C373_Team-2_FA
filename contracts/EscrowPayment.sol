@@ -39,6 +39,8 @@ contract EscrowPayment {
         bool delivered;
         bool paidOut;
         bool rated;
+        bytes32 proofHash;
+        uint256 proofTimestamp;
     }
 
     uint256 public nextOrderId;
@@ -46,6 +48,8 @@ contract EscrowPayment {
     mapping(address => uint256[]) private buyerOrders;
     mapping(address => uint256[]) private sellerOrders;
     mapping(address => UserVerification) private verifications;
+    mapping(bytes32 => address) public orderHashBuyer;
+    mapping(bytes32 => uint256) public orderHashTimestamp;
 
     ISellerReputation public reputation;
 
@@ -62,6 +66,15 @@ contract EscrowPayment {
     event DeliveryConfirmed(uint256 indexed orderId, address indexed buyer);
     event PaymentReleased(uint256 indexed orderId, address indexed seller, uint256 amount);
     event RatingSubmitted(uint256 indexed orderId, address indexed seller, address indexed buyer, uint8 stars);
+    event DocumentNotarized(uint256 indexed orderId, address indexed buyer, bytes32 docHash);
+    event PurchaseNotarized(
+        address indexed buyer,
+        uint256 indexed productId,
+        uint256 qty,
+        uint256 unitPriceWei,
+        bytes32 orderHash,
+        uint256 timestamp
+    );
     event SellerVerified(address indexed account, string name, string email, string phone);
     event BuyerVerified(address indexed account, string name, string email, string phone);
 
@@ -157,7 +170,9 @@ contract EscrowPayment {
             shipped: false,
             delivered: false,
             paidOut: false,
-            rated: false
+            rated: false,
+            proofHash: bytes32(0),
+            proofTimestamp: 0
         });
 
         buyerOrders[msg.sender].push(orderId);
@@ -229,6 +244,34 @@ contract EscrowPayment {
         emit RatingSubmitted(orderId, o.seller, o.buyer, stars);
     }
 
+    // 6) Buyer notarizes proof of delivery with a document hash
+    function notarizeDelivery(uint256 orderId, bytes32 docHash) external {
+        Order storage o = orders[orderId];
+        require(o.buyer == msg.sender, "Only buyer can notarize");
+        require(o.delivered, "Delivery not confirmed");
+        require(docHash != bytes32(0), "Invalid document hash");
+        require(o.proofHash == bytes32(0), "Already notarized");
+
+        o.proofHash = docHash;
+        o.proofTimestamp = block.timestamp;
+        emit DocumentNotarized(orderId, msg.sender, docHash);
+    }
+
+    // 7) Buyer notarizes a purchase receipt hash (proof of purchase)
+    function notarizePurchase(
+        bytes32 orderHash,
+        uint256 productId,
+        uint256 qty,
+        uint256 unitPriceWei
+    ) external {
+        require(isBuyerVerified(msg.sender), "Buyer not verified");
+        require(orderHash != bytes32(0), "Invalid hash");
+        require(orderHashBuyer[orderHash] == address(0), "Hash already notarized");
+        orderHashBuyer[orderHash] = msg.sender;
+        orderHashTimestamp[orderHash] = block.timestamp;
+        emit PurchaseNotarized(msg.sender, productId, qty, unitPriceWei, orderHash, block.timestamp);
+    }
+
     // Helper: view order basic status
     function getOrder(uint256 orderId)
         external
@@ -243,7 +286,9 @@ contract EscrowPayment {
             bool shipped,
             bool delivered,
             bool paidOut,
-            bool rated
+            bool rated,
+            bytes32 proofHash,
+            uint256 proofTimestamp
         )
     {
         Order memory o = orders[orderId];
@@ -257,7 +302,9 @@ contract EscrowPayment {
             o.shipped,
             o.delivered,
             o.paidOut,
-            o.rated
+            o.rated,
+            o.proofHash,
+            o.proofTimestamp
         );
     }
 

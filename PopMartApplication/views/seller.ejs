@@ -126,6 +126,47 @@
                 <%= order.status === "Awaiting Shipment" ? "Confirm shipment" : "Shipment confirmed" %>
               </button>
             </form>
+            <% if (order.status === "Shipped" || order.status === "Delivered") { %>
+              <div style="margin-top:10px; padding:10px 12px; border:1px dashed #e2e8f0; border-radius:12px;">
+                <strong>Verify receipt + upload shipment proof</strong>
+                <p class="muted" style="margin:6px 0 0;">
+                  Verify the on-chain receipt before uploading shipment proof.
+                </p>
+                <div style="margin-top:8px;">
+                  <div class="muted">Order hash: <span class="mono"><%= order.orderHash || "Pending" %></span></div>
+                  <% if (order.notarizeTxHash) { %>
+                    <div class="muted">Notarize tx: <span class="mono"><%= order.notarizeTxHash %></span></div>
+                  <% } %>
+                  <button
+                    class="btn btn-outline"
+                    type="button"
+                    data-receipt-verify
+                    data-order-hash="<%= order.orderHash || '' %>"
+                    <%= order.orderHash ? "" : "disabled" %>
+                  >
+                    Verify receipt
+                  </button>
+                  <span class="muted" data-verify-status style="margin-left:6px;"></span>
+                </div>
+                <% if (order.shipmentProofFile) { %>
+                  <a class="btn btn-ghost" style="margin-top:8px;" href="<%= order.shipmentProofFile %>" target="_blank" rel="noopener">
+                    View shipment proof
+                  </a>
+                <% } else { %>
+                  <form
+                    class="stack"
+                    action="/seller/orders/<%= order.id %>/proof-shipped"
+                    method="POST"
+                    enctype="multipart/form-data"
+                    data-proof-upload
+                  >
+                    <input type="file" name="proofFile" accept="image/*" required />
+                    <button class="btn btn-ghost" type="submit" disabled>Upload shipment proof</button>
+                    <span class="muted">Verify the receipt to enable upload.</span>
+                  </form>
+                <% } %>
+              </div>
+            <% } %>
           </div>
         </div>
       </div>
