@@ -680,8 +680,15 @@ app.get("/track/:id", (req, res) => {
     verified.ok && verified.payload.orderId === order.id ? verified.payload : signTrackToken(basePayload);
   const token = encodePayToken(tokenData);
   const trackUrl = `${req.protocol}://${req.get("host")}${req.path}?token=${token}`;
+  const orderView = {
+    ...order,
+    createdAtDisplay: formatTimestamp(order.createdAt),
+    shippedAtDisplay: formatTimestamp(order.shippedAt),
+    deliveredAtDisplay: formatTimestamp(order.deliveredAt),
+    releasedAtDisplay: formatTimestamp(order.releasedAt),
+  };
   res.render("track", {
-    order,
+    order: orderView,
     token,
     trackUrl,
     tokenPayload: tokenData,
