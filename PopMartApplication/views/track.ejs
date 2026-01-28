@@ -1,0 +1,39 @@
+<%- include("partials/header", { title: "Track Order" }) %>
+
+<div class="stack" style="gap:16px;">
+  <h1 style="margin:0;">Order status</h1>
+  <section class="card fade-in" style="display:grid; grid-template-columns: 1fr 320px; gap:18px; align-items:start;">
+    <div class="stack" style="gap:12px;">
+      <div class="card" style="border:1px dashed #e2e8f0; padding:14px;">
+        <div class="list-item">
+          <img class="thumb" src="<%= order.image || '/images/popmart1.png' %>" alt="Product image" />
+          <div class="stack">
+            <strong><%= order.productName %></strong>
+            <span class="muted">Qty: <%= order.qty %></span>
+            <span class="mono"><%= (Number(order.priceEth || 0) * Number(order.qty || 0)).toFixed(3) %> ETH</span>
+            <% if (order.sellerWallet) { %>
+              <span class="mono muted">Seller: <%= order.sellerWallet %></span>
+            <% } %>
+          </div>
+        </div>
+      </div>
+      <div style="padding:10px 12px; background:#f1f5f9; border-radius:10px; border:1px solid #e2e8f0;">
+        <strong>Status: <%= order.status %></strong>
+      </div>
+      <div class="timeline">
+        <div class="timeline-item">Placed: <span class="mono"><%= order.createdAtDisplay || order.createdAt || '—' %></span></div>
+        <div class="timeline-item">Shipped: <span class="mono"><%= order.shippedAtDisplay || 'Pending' %></span></div>
+        <div class="timeline-item">Delivered: <span class="mono"><%= order.deliveredAtDisplay || 'Pending' %></span></div>
+        <div class="timeline-item">Payment released: <span class="mono"><%= order.releasedAtDisplay || 'Pending' %></span></div>
+      </div>
+      <% if (order.escrowTxHash) { %>
+        <p class="mono">Escrow Tx: <%= order.escrowTxHash %></p>
+      <% } %>
+      <div id="statusBox" class="alert alert-info">Link active. Share or scan to view status.</div>
+      <p class="muted" style="font-size:12px; margin:0;">This link is read-only. No wallet or payment required.</p>
+    </div>
+    <div></div>
+  </section>
+</div>
+
+<%- include("partials/footer") %>

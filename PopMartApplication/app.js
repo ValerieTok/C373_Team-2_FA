@@ -3,6 +3,7 @@ const fs = require("fs");
 const express = require("express");
 const multer = require("multer");
 const session = require("express-session");
+const crypto = require("crypto");
 
 require("dotenv").config();
 
@@ -31,6 +32,8 @@ let ratings = [];
 let nextOrderId = 1001;
 let draftQuantities = {};
 let listingTemplates = [];
+const PAY_TOKEN_SECRET = process.env.PAY_TOKEN_SECRET || "popmart-pay-secret";
+const PAY_TOKEN_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 const templatesPath = path.join(__dirname, "data", "listing-templates.json");
 try {
@@ -107,6 +110,85 @@ function nextProductId() {
 
 function findProduct(productId) {
   return products.find((item) => item.id === productId) || null;
+}
+
+function cartSubtotal(items) {
+  return items.reduce(
+    (sum, item) => sum + Number(item.priceEth || 0) * Number(item.qty || 0),
+    0
+  );
+}
+
+function signPayToken(payload) {
+  const raw = [
+    payload.orderId,
+    payload.amountEth,
+    payload.sellerWallet,
+    payload.chainId,
+    payload.contractAddress,
+    payload.expiry,
+    payload.nonce,
+  ].join("|");
+  const sig = crypto.createHmac("sha256", PAY_TOKEN_SECRET).update(raw).digest("hex");
+  return { ...payload, sig };
+}
+
+function signTrackToken(payload) {
+  const raw = [payload.orderId, payload.status, payload.chainId, payload.expiry, payload.nonce].join(
+    "|"
+  );
+  const sig = crypto.createHmac("sha256", PAY_TOKEN_SECRET).update(raw).digest("hex");
+  return { ...payload, sig };
+}
+
+function encodePayToken(payloadWithSig) {
+  return Buffer.from(JSON.stringify(payloadWithSig)).toString("base64url");
+}
+
+function decodePayToken(token) {
+  try {
+    const json = Buffer.from(String(token || ""), "base64url").toString("utf8");
+    return JSON.parse(json);
+  } catch (err) {
+    return null;
+  }
+}
+
+function verifyPayToken(tokenData) {
+  if (!tokenData) return { ok: false, reason: "Invalid token" };
+  const { sig, ...rest } = tokenData;
+  if (!sig) return { ok: false, reason: "Signature missing" };
+  const expected = signPayToken(rest);
+  if (expected.sig !== sig) return { ok: false, reason: "Signature mismatch" };
+  if (tokenData.expiry && Date.now() > Number(tokenData.expiry)) {
+    return { ok: false, reason: "Token expired" };
+  }
+  return { ok: true, payload: tokenData };
+}
+
+function verifyTrackToken(tokenData) {
+  if (!tokenData) return { ok: false, reason: "Invalid token" };
+  const { sig, ...rest } = tokenData;
+  if (!sig) return { ok: false, reason: "Signature missing" };
+  const expected = signTrackToken(rest);
+  if (expected.sig !== sig) return { ok: false, reason: "Signature mismatch" };
+  if (tokenData.expiry && Date.now() > Number(tokenData.expiry)) {
+    return { ok: false, reason: "Token expired" };
+  }
+  return { ok: true, payload: tokenData };
+}
+
+function getEscrowAddress() {
+  try {
+    const artifactPath = path.join(__dirname, "build", "EscrowPayment.json");
+    const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
+    const networks = artifact.networks || {};
+    const entry = Object.values(networks)[0];
+    if (entry && entry.address) return entry.address;
+  } catch (err) {
+    // ignore
+  }
+  return process.env.ESCROW_ADDRESS || "";
 }
 
 function formatTimestamp(value) {
@@ -453,6 +535,126 @@ app.post("/checkout", (req, res) => {
     return res.json({ ok: true, redirect: "/buyer" });
   }
   res.render("checkout", { cart, status: "Order placed! Seller will confirm shipment soon." });
+});
+
+app.get("/pay/:id", (req, res) => {
+  const orderId = Number(req.params.id);
+  const order = orders.find((item) => item.id === orderId);
+  if (!order) {
+    return res.status(404).send("Order not found.");
+  }
+
+  const escrowAddress = getEscrowAddress();
+  const chainId = Number(process.env.CHAIN_ID || 1337);
+  const amountEth = Number(order.priceEth || 0) * Number(order.qty || 0);
+  const basePayload = {
+    type: "escrowPay",
+    orderId: order.id,
+    amountEth: Number(amountEth.toFixed(6)),
+    productId: order.productId,
+    qty: order.qty,
+    sellerWallet: order.sellerWallet || "",
+    contractAddress: escrowAddress,
+    chainId,
+    expiry: Date.now() + PAY_TOKEN_TTL_MS,
+    nonce: crypto.randomBytes(8).toString("hex"),
+  };
+
+  let tokenData = null;
+  const providedToken = req.query.token ? decodePayToken(req.query.token) : null;
+  const verified = verifyPayToken(providedToken);
+  if (verified.ok && verified.payload.orderId === order.id) {
+    tokenData = verified.payload;
+  } else {
+    tokenData = signPayToken(basePayload);
+  }
+
+  const token = encodePayToken(tokenData);
+  const payUrl = `${req.protocol}://${req.get("host")}${req.path}?token=${token}`;
+
+  res.render("pay", {
+    order,
+    token,
+    payUrl,
+    tokenPayload: tokenData,
+  });
+});
+
+app.post("/pay/:id/confirm", (req, res) => {
+  const orderId = Number(req.params.id);
+  const txHash = String(req.body.txHash || "").trim();
+  const escrowOrderId = String(req.body.escrowOrderId || "").trim();
+  if (!txHash) {
+    return res.status(400).json({ ok: false, message: "Transaction hash missing." });
+  }
+  let updated = false;
+  orders = orders.map((order) => {
+    if (order.id !== orderId) return order;
+    updated = true;
+    return {
+      ...order,
+      escrowTxHash: txHash,
+      escrowOrderId: escrowOrderId || order.escrowOrderId || null,
+      status: order.status === "Awaiting Shipment" ? "Awaiting Shipment" : order.status,
+    };
+  });
+  if (!updated) {
+    return res.status(404).json({ ok: false, message: "Order not found." });
+  }
+  res.json({ ok: true });
+});
+
+app.get("/track/:id", (req, res) => {
+  const orderId = Number(req.params.id);
+  const order = orders.find((item) => item.id === orderId);
+  if (!order) {
+    return res.status(404).send("Order not found.");
+  }
+  const chainId = Number(process.env.CHAIN_ID || 1337);
+  const basePayload = {
+    type: "trackOrder",
+    orderId: order.id,
+    status: order.status,
+    chainId,
+    expiry: Date.now() + PAY_TOKEN_TTL_MS,
+    nonce: crypto.randomBytes(8).toString("hex"),
+  };
+  const providedToken = req.query.token ? decodePayToken(req.query.token) : null;
+  const verified = verifyTrackToken(providedToken);
+  const tokenData =
+    verified.ok && verified.payload.orderId === order.id ? verified.payload : signTrackToken(basePayload);
+  const token = encodePayToken(tokenData);
+  const trackUrl = `${req.protocol}://${req.get("host")}${req.path}?token=${token}`;
+  res.render("track", {
+    order,
+    token,
+    trackUrl,
+    tokenPayload: tokenData,
+  });
+});
+
+app.get("/qr/:id", (req, res) => {
+  const orderId = Number(req.params.id);
+  const order = orders.find((item) => item.id === orderId);
+  if (!order) {
+    return res.status(404).send("Order not found.");
+  }
+  const chainId = Number(process.env.CHAIN_ID || 1337);
+  const basePayload = {
+    type: "trackOrder",
+    orderId: order.id,
+    status: order.status,
+    chainId,
+    expiry: Date.now() + PAY_TOKEN_TTL_MS,
+    nonce: crypto.randomBytes(8).toString("hex"),
+  };
+  const tokenData = signTrackToken(basePayload);
+  const token = encodePayToken(tokenData);
+  const trackUrl = `${req.protocol}://${req.get("host")}/track/${order.id}?token=${token}`;
+  res.render("qr", {
+    order,
+    trackUrl,
+  });
 });
 
 app.get("/product/:id", (req, res) => {

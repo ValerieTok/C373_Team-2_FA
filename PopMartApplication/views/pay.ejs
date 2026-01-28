@@ -1,0 +1,196 @@
+<%- include("partials/header", { title: "Pay Order" }) %>
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+  <span class="role-tag">QR Pay</span>
+  <span class="mono muted">Order <%= order.id %></span>
+</div>
+
+<section class="card fade-in" style="display:grid; grid-template-columns: 320px 1fr; gap:18px; align-items:start;">
+  <style>
+    .alert { border-radius: 10px; padding: 10px 12px; margin: 6px 0 0; font-size: 13px; }
+    .alert-info { background:#e0f2fe; border:1px solid #bfdbfe; color:#075985; }
+    .alert-success { background:#ecfdf3; border:1px solid #bbf7d0; color:#166534; }
+    .alert-error { background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; }
+    .alert-warning { background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; }
+  </style>
+  <div style="text-align:center;">
+    <div id="qr" style="margin:0 auto; width:280px; height:280px;"></div>
+    <p class="muted" style="margin-top:10px;">Scan with iPhone camera or a wallet scanner.</p>
+    <button class="btn btn-outline" id="copyLinkBtn" type="button" style="width:100%; margin-top:8px;">Copy pay link</button>
+  </div>
+  <div class="stack" style="gap:10px;">
+    <h2 style="margin:0;">Pay this order</h2>
+    <p class="muted">Validate the QR payload, connect your wallet, and send the payment via the escrow contract.</p>
+    <div class="card" style="border:1px dashed #e2e8f0;">
+      <div class="list-item">
+        <img class="thumb" src="<%= order.image || '/images/popmart1.png' %>" alt="Product image" />
+        <div class="stack">
+          <strong><%= order.productName %></strong>
+          <span class="muted">Qty: <%= order.qty %></span>
+          <span class="mono"><%= (Number(order.priceEth || 0) * Number(order.qty || 0)).toFixed(3) %> ETH</span>
+          <% if (order.sellerWallet) { %>
+            <span class="mono muted">Seller: <%= order.sellerWallet %></span>
+          <% } %>
+        </div>
+      </div>
+    </div>
+    <div id="statusBox" class="alert alert-info">Ready to scan. Token expires in 15 minutes.</div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-alt" type="button" id="connectBtn">Connect wallet</button>
+      <button class="btn btn-ghost" type="button" id="payBtn">Pay now</button>
+      <button class="btn btn-outline" type="button" id="openMetaMaskBtn">Open in MetaMask</button>
+    </div>
+    <p class="muted" style="font-size:12px; margin:0;">
+      If Safari opened from the camera, tap "Open in MetaMask" or another wallet. WalletConnect is supported via the injected provider.
+    </p>
+  </div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script id="payData" type="application/json"><%- JSON.stringify({ token, payUrl, payload: tokenPayload, order }) %></script>
+
+<script>
+  (function () {
+    const dataEl = document.getElementById("payData");
+    const statusBox = document.getElementById("statusBox");
+    const connectBtn = document.getElementById("connectBtn");
+    const payBtn = document.getElementById("payBtn");
+    const copyLinkBtn = document.getElementById("copyLinkBtn");
+    const openMetaMaskBtn = document.getElementById("openMetaMaskBtn");
+    const qrEl = document.getElementById("qr");
+    const state = {
+      payload: null,
+      payUrl: "",
+      provider: null,
+      signer: null,
+      contract: null,
+      account: null,
+    };
+
+    function setStatus(text, tone) {
+      statusBox.textContent = text;
+      statusBox.className = "alert alert-" + (tone || "info");
+    }
+
+    function decodeData() {
+      try {
+        const parsed = JSON.parse(dataEl.textContent || "{}");
+        state.payload = parsed.payload || null;
+        state.payUrl = parsed.payUrl || window.location.href;
+      } catch (err) {
+        setStatus("Failed to load pay data.", "error");
+      }
+    }
+
+    function renderQr() {
+      if (!qrEl || !state.payUrl) return;
+      qrEl.innerHTML = "";
+      new QRCode(qrEl, {
+        text: state.payUrl,
+        width: 280,
+        height: 280,
+        correctLevel: QRCode.CorrectLevel.M,
+      });
+    }
+
+    function validatePayload() {
+      const p = state.payload;
+      if (!p || p.type !== "escrowPay") throw new Error("Invalid payload.");
+      if (p.expiry && Date.now() > Number(p.expiry)) throw new Error("QR expired. Refresh the page.");
+      if (!p.contractAddress) throw new Error("Contract address missing.");
+      return p;
+    }
+
+    async function ensureWallet() {
+      if (!window.ethereum) throw new Error("No wallet detected. Open in MetaMask or a wallet browser.");
+      if (!state.provider) {
+        state.provider = new window.ethers.providers.Web3Provider(window.ethereum);
+        state.signer = state.provider.getSigner();
+      }
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      state.account = accounts && accounts.length ? accounts[0] : null;
+      const network = await state.provider.getNetwork();
+      const expected = Number(state.payload.chainId || 0);
+      if (expected && Number(network.chainId) !== expected) {
+        try {
+          await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: "0x" + expected.toString(16) }],
+          });
+        } catch (err) {
+          throw new Error("Switch wallet to chain " + expected + " before paying.");
+        }
+      }
+      return state.account;
+    }
+
+    async function loadContract() {
+      if (state.contract) return state.contract;
+      const res = await fetch("/build/EscrowPayment.json", { cache: "no-store" });
+      if (!res.ok) throw new Error("Missing contract artifact.");
+      const artifact = await res.json();
+      state.contract = new window.ethers.Contract(
+        state.payload.contractAddress,
+        artifact.abi,
+        state.signer
+      );
+      return state.contract;
+    }
+
+    async function pay() {
+      validatePayload();
+      await ensureWallet();
+      await loadContract();
+      const p = state.payload;
+      const amountWei = window.ethers.utils.parseEther(String(p.amountEth || 0));
+      const unitWei = window.ethers.utils.parseEther(String(Number(p.amountEth || 0) / Number(p.qty || 1)));
+      const nextId = await state.contract.nextOrderId();
+      const tx = await state.contract.createOrder(
+        p.productId,
+        p.qty,
+        unitWei,
+        { value: amountWei }
+      );
+      setStatus("Transaction sent. Waiting for confirmation...", "info");
+      const receipt = await tx.wait();
+      setStatus("Payment confirmed on-chain.", "success");
+      await fetch(window.location.pathname + "/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          txHash: receipt.transactionHash,
+          escrowOrderId: nextId.toString(),
+        }),
+      });
+    }
+
+    function copyLink() {
+      const text = state.payUrl;
+      navigator.clipboard.writeText(text).then(
+        () => setStatus("Link copied. Paste in your wallet browser.", "success"),
+        () => setStatus("Copy failed. Copy manually: " + text, "warning")
+      );
+    }
+
+    function openMetaMaskDeepLink() {
+      const url = state.payUrl;
+      const deep = "metamask://dapp/" + url.replace(/^https?:\\/\\//, "");
+      window.location.href = deep;
+    }
+
+    decodeData();
+    renderQr();
+    setStatus("Ready. Scan or open in wallet to pay.", "info");
+
+    if (copyLinkBtn) copyLinkBtn.addEventListener("click", copyLink);
+    if (openMetaMaskBtn) openMetaMaskBtn.addEventListener("click", openMetaMaskDeepLink);
+    if (connectBtn) connectBtn.addEventListener("click", function () {
+      ensureWallet().then(() => setStatus("Wallet connected: " + state.account, "success")).catch((err) => setStatus(err.message || "Wallet error", "error"));
+    });
+    if (payBtn) payBtn.addEventListener("click", function () {
+      pay().catch((err) => setStatus(err.message || "Payment failed", "error"));
+    });
+  })();
+</script>
+
+<%- include("partials/footer") %>

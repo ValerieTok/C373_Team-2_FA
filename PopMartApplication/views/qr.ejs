@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Order QR</title>
+  <style>
+    body { margin:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f8fafc; font-family: "IBM Plex Sans", "Segoe UI", Arial, sans-serif; }
+    .card { background:#fff; padding:22px; border-radius:18px; border:1px solid #e2e8f0; box-shadow: 0 4px 16px rgba(0,0,0,0.04); text-align:center; }
+    .muted { color:#475569; font-size:14px; margin:8px 0 0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div id="qr" style="width:320px; height:320px; margin:0 auto;"></div>
+    <p class="muted">Scan to view order status for #<%= order.id %>.</p>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    (function () {
+      var url = "<%- trackUrl %>";
+      var qrEl = document.getElementById("qr");
+      new QRCode(qrEl, { text: url, width: 320, height: 320, correctLevel: QRCode.CorrectLevel.M });
+    })();
+  </script>
+</body>
+</html>

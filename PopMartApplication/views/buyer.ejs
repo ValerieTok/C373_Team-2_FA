@@ -37,6 +37,9 @@
               <span class="mono"><%= order.priceEth %> ETH</span>
               <span class="pill">Escrow ID: <%= order.escrowOrderId || "Pending" %></span>
             </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:6px;">
+              <a class="btn btn-ghost" href="/qr/<%= order.id %>">Track via QR</a>
+            </div>
             <% if (order.status === "Shipped" || order.status === "Delivered") { %>
               <form action="/buyer/orders/<%= order.id %>/deliver" method="POST" data-escrow-action="deliver" data-escrow-order-id="<%= order.escrowOrderId || '' %>" data-expected-wallet="<%= order.buyerWallet || '' %>">
                 <button
