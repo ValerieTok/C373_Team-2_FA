@@ -12,8 +12,13 @@
 </head>
 <body>
   <div class="card">
-    <div id="qr" style="width:320px; height:320px; margin:0 auto;"></div>
-    <p class="muted">Scan to view order status for #<%= order.id %>.</p>
+    <a id="qrLink" href="<%- trackUrl %>" target="_blank" rel="noopener" style="display:inline-block;">
+      <div id="qr" style="width:320px; height:320px; margin:0 auto;"></div>
+    </a>
+    <p class="muted">
+      Scan or tap to view order status for #<%= order.id %>. QR refreshes in
+      <span id="countdown">03:00</span>.
+    </p>
   </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
@@ -21,6 +26,31 @@
       var url = "<%- trackUrl %>";
       var qrEl = document.getElementById("qr");
       new QRCode(qrEl, { text: url, width: 320, height: 320, correctLevel: QRCode.CorrectLevel.M });
+      var qrLink = document.getElementById("qrLink");
+      qrLink.href = url;
+
+      // 3-minute countdown then reload to fetch a fresh token/QR.
+      var ttlMs = 180000;
+      var countdownEl = document.getElementById("countdown");
+      var end = Date.now() + ttlMs;
+
+      function format(ms) {
+        var total = Math.max(0, Math.floor(ms / 1000));
+        var m = String(Math.floor(total / 60)).padStart(2, "0");
+        var s = String(total % 60).padStart(2, "0");
+        return m + ":" + s;
+      }
+
+      function tick() {
+        var remaining = end - Date.now();
+        countdownEl.textContent = format(remaining);
+        if (remaining <= 0) {
+          window.location.reload();
+        } else {
+          requestAnimationFrame(tick);
+        }
+      }
+      tick();
     })();
   </script>
 </body>
