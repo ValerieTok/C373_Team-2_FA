@@ -714,34 +714,15 @@
         await withTxLock(lockKey, async function () {
           if (action === "ship") {
             try {
-              const delivery = await state.deliveryTracking.deliveries(escrowOrderId);
-              let status = Number(delivery && delivery.status != null ? delivery.status : 0);
-              if (status < 1) {
-                await (await state.deliveryTracking.markShipped(escrowOrderId, "")).wait();
-                status = 1;
-              }
-              if (status < 2) {
-                await (await state.deliveryTracking.markInTransit(escrowOrderId)).wait();
-                status = 2;
-              }
-              if (status < 3) {
-                await (await state.deliveryTracking.markDelivered(escrowOrderId)).wait();
-                status = 3;
-              }
+              await (await state.deliveryTracking.advanceToDelivered(escrowOrderId, "")).wait();
             } catch (err) {
               const reason = normalizeRpcError(err);
               throw new Error(reason || "Shipment update failed.");
             }
           } else if (action === "deliver") {
             try {
-              const delivery = await state.deliveryTracking.deliveries(escrowOrderId);
-              const status = Number(delivery && delivery.status != null ? delivery.status : 0);
-              if (status < 3) {
-                throw new Error("Seller must mark delivery before buyer confirmation.");
-              }
-              await (await state.deliveryTracking.confirmDelivery(escrowOrderId)).wait();
               if (state.escrowContract) {
-                await (await state.escrowContract.release(escrowOrderId)).wait();
+                await (await state.escrowContract.confirmAndRelease(escrowOrderId)).wait();
               }
             } catch (err) {
               const reason = normalizeRpcError(err);

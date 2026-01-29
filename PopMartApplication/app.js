@@ -85,6 +85,7 @@ const uploadProof = multer({
 let products = [];
 let listingContract = null;
 let deliveryTrackingContract = null;
+let escrowContract = null;
 let web3 = null;
 
 async function initListingContract() {
@@ -125,6 +126,26 @@ async function initDeliveryTrackingContract() {
   }
   deliveryTrackingContract = new web3.eth.Contract(artifact.abi, deployed);
   return deliveryTrackingContract;
+}
+
+async function initEscrowContract() {
+  if (escrowContract) return escrowContract;
+  if (!web3) {
+    web3 = new Web3(GANACHE_RPC);
+  }
+  const artifactPath = path.join(__dirname, "public", "build", "PaymentEscrow.json");
+  const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
+  const networkId = await web3.eth.net.getId();
+  const deployed =
+    process.env.ESCROW_ADDRESS ||
+    (artifact.networks && artifact.networks[String(networkId)]
+      ? artifact.networks[String(networkId)].address
+      : "");
+  if (!deployed) {
+    throw new Error("PaymentEscrow not deployed for this network.");
+  }
+  escrowContract = new web3.eth.Contract(artifact.abi, deployed);
+  return escrowContract;
 }
 
 async function loadListingsFromChain() {
@@ -336,15 +357,28 @@ function buildLocalAuditLog(order) {
 }
 
 async function buildChainAuditLog(orderId) {
-  const contract = await initDeliveryTrackingContract();
-  const events = await contract.getPastEvents("allEvents", {
-    filter: { orderId: String(orderId) },
-    fromBlock: 0,
-    toBlock: "latest",
-  });
-  if (!Array.isArray(events) || events.length === 0) {
-    return [];
-  }
+  const [deliveryContract, escrow] = await Promise.all([
+    initDeliveryTrackingContract(),
+    initEscrowContract().catch(() => null),
+  ]);
+  const [deliveryEvents, escrowEvents] = await Promise.all([
+    deliveryContract.getPastEvents("allEvents", {
+      filter: { orderId: String(orderId) },
+      fromBlock: 0,
+      toBlock: "latest",
+    }),
+    escrow
+      ? escrow.getPastEvents("allEvents", {
+          filter: { orderId: String(orderId) },
+          fromBlock: 0,
+          toBlock: "latest",
+        })
+      : Promise.resolve([]),
+  ]);
+  const events = []
+    .concat(Array.isArray(deliveryEvents) ? deliveryEvents : [])
+    .concat(Array.isArray(escrowEvents) ? escrowEvents : []);
+  if (!Array.isArray(events) || events.length === 0) return [];
   const blockCache = new Map();
   async function getBlockTimestamp(blockNumber) {
     if (blockCache.has(blockNumber)) return blockCache.get(blockNumber);
@@ -397,6 +431,28 @@ async function buildChainAuditLog(orderId) {
             details: "Buyer confirmed delivery.",
             actor,
             status: "Confirmed",
+            sortKey,
+          };
+        case "EscrowFunded":
+          return {
+            title: "Escrow funded",
+            timestamp: timestampIso,
+            details: values.amountWei
+              ? `Escrow funded with ${web3.utils.fromWei(String(values.amountWei), "ether")} ETH.`
+              : "Escrow funded.",
+            actor,
+            status: "Funded",
+            sortKey,
+          };
+        case "PaymentReleased":
+          return {
+            title: "Payment released",
+            timestamp: timestampIso,
+            details: values.amountWei
+              ? `Released ${web3.utils.fromWei(String(values.amountWei), "ether")} ETH to seller.`
+              : "Escrow released to seller.",
+            actor,
+            status: "Released",
             sortKey,
           };
         default:

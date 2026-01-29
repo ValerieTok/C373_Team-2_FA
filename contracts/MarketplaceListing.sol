@@ -27,6 +27,12 @@ contract MarketplaceListing {
         string imageUrl,
         uint256 timestamp
     );
+    event ListingCreated(
+        uint256 indexed listingId,
+        address indexed seller,
+        uint256 priceWei,
+        uint256 timestamp
+    );
 
     constructor() {
         nextListingId = 1;
@@ -70,6 +76,12 @@ contract MarketplaceListing {
             description,
             priceWei,
             imageUrl,
+            block.timestamp
+        );
+        emit ListingCreated(
+            nextListingId,
+            msg.sender,
+            priceWei,
             block.timestamp
         );
 

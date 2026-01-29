@@ -13,6 +13,14 @@ contract PaymentEscrow {
 
     mapping(uint256 => uint256) public escrowAmount;
 
+    event PaymentReleased(uint256 indexed orderId, address indexed seller, uint256 amountWei);
+    event EscrowFunded(
+        uint256 indexed orderId,
+        address indexed buyer,
+        address indexed seller,
+        uint256 amountWei
+    );
+
     constructor(
         address listingAddress,
         address orderRegistryAddress,
@@ -37,6 +45,7 @@ contract PaymentEscrow {
         );
 
         escrowAmount[orderId] = msg.value;
+        emit EscrowFunded(orderId, msg.sender, listingContract.getSeller(listingId), msg.value);
         return orderId;
     }
 
@@ -49,5 +58,21 @@ contract PaymentEscrow {
         escrowAmount[orderId] = 0;
         (bool ok, ) = payable(seller).call{value: amount}("");
         require(ok, "PaymentEscrow: transfer failed");
+        emit PaymentReleased(orderId, seller, amount);
+    }
+
+    function confirmAndRelease(uint256 orderId) external {
+        address buyer = orderRegistry.getBuyer(orderId);
+        require(msg.sender == buyer, "PaymentEscrow: buyer only");
+
+        deliveryTracking.confirmDeliveryByEscrow(orderId, buyer);
+
+        address seller = orderRegistry.getSeller(orderId);
+        uint256 amount = escrowAmount[orderId];
+
+        escrowAmount[orderId] = 0;
+        (bool ok, ) = payable(seller).call{value: amount}("");
+        require(ok, "PaymentEscrow: transfer failed");
+        emit PaymentReleased(orderId, seller, amount);
     }
 }

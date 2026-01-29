@@ -14,4 +14,7 @@ module.exports = async function (deployer) {
         orderRegistry.address,
         delivery.address
     );
+
+    const escrow = await PaymentEscrow.deployed();
+    await delivery.setEscrowAddress(escrow.address);
 };
