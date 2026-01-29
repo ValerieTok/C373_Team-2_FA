@@ -1,5 +1,5 @@
 <%- include("partials/header", { title: "Track Order" }) %>
-
+ 
 <div class="stack" style="gap:16px;">
   <h1 style="margin:0;">Order status</h1>
   <section class="card fade-in" style="display:grid; grid-template-columns: 1fr 320px; gap:18px; align-items:start;">
@@ -31,9 +31,49 @@
       <% } %>
       <div id="statusBox" class="alert alert-info">Link active. Share or scan to view status.</div>
       <p class="muted" style="font-size:12px; margin:0;">This link is read-only. No wallet or payment required.</p>
+ 
+      <% if (auditLog && auditLog.length) { %>
+        <section class="card" style="border:1px solid #e2e8f0; padding:12px;">
+          <div class="list-item" style="margin-bottom:10px;">
+            <div class="stack">
+              <strong>Audit log</strong>
+              <span class="muted" style="font-size:12px;">Sourced from on-chain and order events</span>
+            </div>
+          </div>
+          <div class="stack" style="gap:10px;">
+            <% auditLog.forEach(function(entry){ %>
+              <div class="list-item">
+                <div class="stack" style="gap:4px;">
+                  <strong><%= entry.title %></strong>
+                  <span class="muted mono" style="font-size:12px;"><%= formatTimestamp(entry.timestamp) %></span>
+                  <span class="muted" style="font-size:13px;"><%= entry.details || 'No details' %></span>
+                  <span class="mono muted" style="font-size:12px;">Actor: <%= entry.actor || 'Unknown' %> | Status: <%= entry.status || 'n/a' %></span>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        </section>
+      <% } %>
+ 
+      <% if (txInfo && txInfo.hash) { %>
+        <section class="card" style="border:1px solid #e2e8f0; padding:12px;">
+          <div class="stack" style="gap:6px;">
+            <strong>Core transaction</strong>
+            <span class="mono">Tx: <%= txInfo.hash %></span>
+            <span class="mono muted">Status: <%= txInfo.status || 'Unknown' %></span>
+            <span class="mono muted">From: <%= txInfo.from || '—' %></span>
+            <span class="mono muted">To (contract): <%= txInfo.to || contractAddress || '—' %></span>
+            <% if (txInfo.valueEth != null) { %><span class="mono muted">Value: <%= txInfo.valueEth %> ETH</span><% } %>
+            <% if (txInfo.gasUsed != null) { %><span class="mono muted">Gas used: <%= txInfo.gasUsed %></span><% } %>
+            <% if (txInfo.feeEth != null) { %><span class="mono muted">Fee: <%= txInfo.feeEth %> ETH</span><% } %>
+            <span class="mono muted">Chain ID: <%= chainId %></span>
+          </div>
+        </section>
+      <% } %>
     </div>
     <div></div>
   </section>
 </div>
-
+ 
 <%- include("partials/footer") %>
+ 

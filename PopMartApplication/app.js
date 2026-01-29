@@ -16,6 +16,9 @@ const GANACHE_RPC = process.env.GANACHE_RPC || "http://127.0.0.1:7545";
 const MARKETPLACE_LISTING_ADDRESS = String(
   process.env.MARKETPLACE_LISTING_ADDRESS || ""
 ).trim();
+const DELIVERY_TRACKING_ADDRESS = String(
+  process.env.DELIVERY_TRACKING_ADDRESS || ""
+).trim();
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -81,6 +84,7 @@ const uploadProof = multer({
 
 let products = [];
 let listingContract = null;
+let deliveryTrackingContract = null;
 let web3 = null;
 
 async function initListingContract() {
@@ -101,6 +105,26 @@ async function initListingContract() {
   }
   listingContract = new web3.eth.Contract(artifact.abi, deployed);
   return listingContract;
+}
+
+async function initDeliveryTrackingContract() {
+  if (deliveryTrackingContract) return deliveryTrackingContract;
+  if (!web3) {
+    web3 = new Web3(GANACHE_RPC);
+  }
+  const artifactPath = path.join(__dirname, "public", "build", "DeliveryTracking.json");
+  const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
+  const networkId = await web3.eth.net.getId();
+  const deployed =
+    DELIVERY_TRACKING_ADDRESS ||
+    (artifact.networks && artifact.networks[String(networkId)]
+      ? artifact.networks[String(networkId)].address
+      : "");
+  if (!deployed) {
+    throw new Error("DeliveryTracking not deployed for this network.");
+  }
+  deliveryTrackingContract = new web3.eth.Contract(artifact.abi, deployed);
+  return deliveryTrackingContract;
 }
 
 async function loadListingsFromChain() {
@@ -248,6 +272,185 @@ function formatDurationMs(durationMs, scaleSecondsToMinutes = 1) {
   const hours = Math.floor(scaledMinutes / 60);
   const minutes = scaledMinutes % 60;
   return `${hours}h ${minutes.toString().padStart(2, "0")}m`;
+}
+
+function buildLocalAuditLog(order) {
+  const entries = [];
+  const buyerLabel = order.buyerWallet || "Buyer";
+  const sellerLabel = order.sellerWallet || "Seller";
+  if (order.createdAt) {
+    entries.push({
+      title: "Order placed",
+      timestamp: order.createdAt,
+      details: `Order #${order.id} created`,
+      actor: buyerLabel,
+      status: "Placed",
+    });
+  }
+  if (order.shippedAt) {
+    entries.push({
+      title: "Shipment marked",
+      timestamp: order.shippedAt,
+      details: "Seller confirmed shipment.",
+      actor: sellerLabel,
+      status: "Shipped",
+    });
+  }
+  if (order.deliveredAt) {
+    entries.push({
+      title: "Delivery marked",
+      timestamp: order.deliveredAt,
+      details: "Buyer confirmed delivery.",
+      actor: buyerLabel,
+      status: "Delivered",
+    });
+  }
+  if (order.releasedAt) {
+    entries.push({
+      title: "Payment released",
+      timestamp: order.releasedAt,
+      details: "Escrow released to seller.",
+      actor: "Escrow",
+      status: "Released",
+    });
+  }
+  if (order.shipmentProofAt) {
+    entries.push({
+      title: "Shipment proof uploaded",
+      timestamp: order.shipmentProofAt,
+      details: "Seller uploaded shipment proof.",
+      actor: sellerLabel,
+      status: "ShipmentProof",
+    });
+  }
+  if (order.deliveryProofAt) {
+    entries.push({
+      title: "Delivery proof uploaded",
+      timestamp: order.deliveryProofAt,
+      details: "Buyer uploaded delivery proof.",
+      actor: buyerLabel,
+      status: "DeliveryProof",
+    });
+  }
+  return entries;
+}
+
+async function buildChainAuditLog(orderId) {
+  const contract = await initDeliveryTrackingContract();
+  const events = await contract.getPastEvents("allEvents", {
+    filter: { orderId: String(orderId) },
+    fromBlock: 0,
+    toBlock: "latest",
+  });
+  if (!Array.isArray(events) || events.length === 0) {
+    return [];
+  }
+  const blockCache = new Map();
+  async function getBlockTimestamp(blockNumber) {
+    if (blockCache.has(blockNumber)) return blockCache.get(blockNumber);
+    const block = await web3.eth.getBlock(blockNumber);
+    const timestamp = block && block.timestamp ? Number(block.timestamp) : 0;
+    blockCache.set(blockNumber, timestamp);
+    return timestamp;
+  }
+  const mapped = await Promise.all(
+    events.map(async (event) => {
+      const values = event.returnValues || {};
+      const actor = values.actor || "";
+      const trackingId = values.trackingId || "";
+      const blockTime = await getBlockTimestamp(event.blockNumber);
+      const timestampIso = blockTime ? new Date(blockTime * 1000).toISOString() : "";
+      const sortKey =
+        Number(event.blockNumber || 0) * 1000000 + Number(event.logIndex || 0);
+      switch (event.event) {
+        case "ShipmentMarked":
+          return {
+            title: "Shipment marked on-chain",
+            timestamp: timestampIso,
+            details: trackingId ? `Tracking ID: ${trackingId}` : "Shipment recorded on-chain.",
+            actor,
+            status: "Shipped",
+            sortKey,
+          };
+        case "InTransitMarked":
+          return {
+            title: "Shipment in transit",
+            timestamp: timestampIso,
+            details: "Carrier confirmed in-transit.",
+            actor,
+            status: "InTransit",
+            sortKey,
+          };
+        case "DeliveredMarked":
+          return {
+            title: "Shipment delivered",
+            timestamp: timestampIso,
+            details: "Seller confirmed delivery.",
+            actor,
+            status: "Delivered",
+            sortKey,
+          };
+        case "DeliveryConfirmed":
+          return {
+            title: "Delivery confirmed on-chain",
+            timestamp: timestampIso,
+            details: "Buyer confirmed delivery.",
+            actor,
+            status: "Confirmed",
+            sortKey,
+          };
+        default:
+          return null;
+      }
+    })
+  );
+  return mapped.filter(Boolean).sort((a, b) => a.sortKey - b.sortKey);
+}
+
+function sortAuditLog(entries) {
+  return entries.sort((a, b) => {
+    const aTime = a && a.timestamp ? new Date(a.timestamp).getTime() : 0;
+    const bTime = b && b.timestamp ? new Date(b.timestamp).getTime() : 0;
+    if (aTime !== bTime) return aTime - bTime;
+    return String(a.title || "").localeCompare(String(b.title || ""));
+  });
+}
+
+async function buildCoreTxInfo(order) {
+  const txHash = String(order.escrowTxHash || order.notarizeTxHash || "").trim();
+  if (!txHash) return null;
+  if (!web3) {
+    web3 = new Web3(GANACHE_RPC);
+  }
+  const [tx, receipt] = await Promise.all([
+    web3.eth.getTransaction(txHash),
+    web3.eth.getTransactionReceipt(txHash),
+  ]);
+  if (!tx && !receipt) {
+    return { hash: txHash, status: "Unknown" };
+  }
+  let feeEth = null;
+  let gasUsed = null;
+  if (receipt && receipt.gasUsed) {
+    gasUsed = Number(receipt.gasUsed);
+    const gasPriceWei = receipt.effectiveGasPrice || (tx && tx.gasPrice) || null;
+    if (gasPriceWei) {
+      const feeWei = web3.utils.toBN(gasPriceWei).mul(web3.utils.toBN(receipt.gasUsed));
+      feeEth = Number(web3.utils.fromWei(feeWei, "ether"));
+    }
+  }
+  const valueEth =
+    tx && tx.value != null ? Number(web3.utils.fromWei(String(tx.value), "ether")) : null;
+  return {
+    hash: txHash,
+    status: receipt ? (receipt.status ? "Success" : "Failed") : "Pending",
+    from: (tx && tx.from) || "",
+    to: (tx && tx.to) || (receipt && receipt.to) || "",
+    valueEth: valueEth != null ? Number(valueEth.toFixed(6)) : null,
+    gasUsed,
+    feeEth: feeEth != null ? Number(feeEth.toFixed(6)) : null,
+    blockNumber: receipt ? receipt.blockNumber : null,
+  };
 }
 
 function buildRatingsSummary(items, allRatings) {
@@ -468,24 +671,23 @@ app.post("/seller/orders/:id/ship", (req, res) => {
   const order = orders.find((item) => item.id === orderId);
   const sessionWallet = getSellerWallet(req).toLowerCase();
   const orderWallet = order && order.sellerWallet ? order.sellerWallet.toLowerCase() : "";
-  console.log(`CONFIRM SHIPMENT clicked by wallet: ${sessionWallet || "Unknown"}`);
-  console.log("Sending transaction to EscrowPayment contract...");
-  const shipmentTxHash = String(req.body.txHash || "").trim();
-  if (shipmentTxHash) {
-    console.log(`Transaction confirmed: ${shipmentTxHash}`);
-  }
   if (!order || !orderWallet || !sessionWallet || orderWallet !== sessionWallet) {
     if (req.is("application/json")) {
       return res.status(403).json({ ok: false, message: "Seller wallet mismatch." });
     }
     return res.status(403).send("Seller wallet mismatch.");
   }
+  if (!req.is("application/json")) {
+    return res.status(400).send("On-chain shipment confirmation required.");
+  }
+  if (!order.escrowOrderId) {
+    return res.status(400).json({ ok: false, message: "Escrow order id missing." });
+  }
   orders = orders.map((order) =>
     order.id === orderId && order.status === "Awaiting Shipment"
       ? { ...order, status: "Shipped", shippedAt: new Date().toISOString() }
       : order
   );
-  console.log("Escrow state updated on-chain");
   if (req.is("application/json")) {
     return res.json({ ok: true });
   }
@@ -739,7 +941,7 @@ app.post("/pay/:id/confirm", (req, res) => {
   res.json({ ok: true });
 });
 
-app.get("/track/:id", (req, res) => {
+app.get("/track/:id", async (req, res) => {
   const orderId = Number(req.params.id);
   const order = orders.find((item) => item.id === orderId);
   if (!order) {
@@ -767,11 +969,40 @@ app.get("/track/:id", (req, res) => {
     deliveredAtDisplay: formatTimestamp(order.deliveredAt),
     releasedAtDisplay: formatTimestamp(order.releasedAt),
   };
+  let auditLog = [];
+  let deliveryContractAddress = "";
+  let txInfo = null;
+  try {
+    const [chainLog, localLog, contract] = await Promise.all([
+      buildChainAuditLog(order.id),
+      Promise.resolve(buildLocalAuditLog(order)),
+      initDeliveryTrackingContract(),
+    ]);
+    const chainStatuses = new Set(chainLog.map((entry) => entry.status));
+    auditLog = sortAuditLog(
+      chainLog.concat(localLog.filter((entry) => !chainStatuses.has(entry.status)))
+    );
+    if (contract && contract.options && contract.options.address) {
+      deliveryContractAddress = contract.options.address;
+    }
+  } catch (err) {
+    auditLog = sortAuditLog(buildLocalAuditLog(order));
+  }
+  try {
+    txInfo = await buildCoreTxInfo(order);
+  } catch (err) {
+    txInfo = null;
+  }
   res.render("track", {
     order: orderView,
     token,
     trackUrl,
     tokenPayload: tokenData,
+    auditLog,
+    chainId,
+    contractAddress: deliveryContractAddress,
+    formatTimestamp,
+    txInfo,
   });
 });
 

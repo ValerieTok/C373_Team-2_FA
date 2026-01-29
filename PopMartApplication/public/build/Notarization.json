@@ -2884,7 +2884,7 @@
                 }
               ]
             },
-            "name": "convert_t_contract$_OrderRegistry_$867_to_t_address",
+            "name": "convert_t_contract$_OrderRegistry_$918_to_t_address",
             "nodeType": "YulFunctionDefinition",
             "parameters": [
               {
@@ -2926,7 +2926,7 @@
                           }
                         ],
                         "functionName": {
-                          "name": "convert_t_contract$_OrderRegistry_$867_to_t_address",
+                          "name": "convert_t_contract$_OrderRegistry_$918_to_t_address",
                           "nodeType": "YulIdentifier",
                           "src": "3186:51:7"
                         },
@@ -2947,7 +2947,7 @@
                 }
               ]
             },
-            "name": "abi_encode_t_contract$_OrderRegistry_$867_to_t_address_fromStack",
+            "name": "abi_encode_t_contract$_OrderRegistry_$918_to_t_address_fromStack",
             "nodeType": "YulFunctionDefinition",
             "parameters": [
               {
@@ -3037,7 +3037,7 @@
                       }
                     ],
                     "functionName": {
-                      "name": "abi_encode_t_contract$_OrderRegistry_$867_to_t_address_fromStack",
+                      "name": "abi_encode_t_contract$_OrderRegistry_$918_to_t_address_fromStack",
                       "nodeType": "YulIdentifier",
                       "src": "3422:64:7"
                     },
@@ -3049,7 +3049,7 @@
                 }
               ]
             },
-            "name": "abi_encode_tuple_t_contract$_OrderRegistry_$867__to_t_address__fromStack_reversed",
+            "name": "abi_encode_tuple_t_contract$_OrderRegistry_$918__to_t_address__fromStack_reversed",
             "nodeType": "YulFunctionDefinition",
             "parameters": [
               {
@@ -4710,7 +4710,7 @@
           }
         ]
       },
-      "contents": "{\n\n    function allocate_unbounded() -> memPtr {\n        memPtr := mload(64)\n    }\n\n    function revert_error_dbdddcbe895c83990c08b3492a0e83918d802a52331272ac6fdb6a7c4aea3b1b() {\n        revert(0, 0)\n    }\n\n    function revert_error_c1322bf8034eace5e0b5c7295db60986aa89aae5e0ea0873e4689e076861a5db() {\n        revert(0, 0)\n    }\n\n    function cleanup_t_uint256(value) -> cleaned {\n        cleaned := value\n    }\n\n    function validator_revert_t_uint256(value) {\n        if iszero(eq(value, cleanup_t_uint256(value))) { revert(0, 0) }\n    }\n\n    function abi_decode_t_uint256(offset, end) -> value {\n        value := calldataload(offset)\n        validator_revert_t_uint256(value)\n    }\n\n    function abi_decode_tuple_t_uint256(headStart, dataEnd) -> value0 {\n        if slt(sub(dataEnd, headStart), 32) { revert_error_dbdddcbe895c83990c08b3492a0e83918d802a52331272ac6fdb6a7c4aea3b1b() }\n\n        {\n\n            let offset := 0\n\n            value0 := abi_decode_t_uint256(add(headStart, offset), dataEnd)\n        }\n\n    }\n\n    function cleanup_t_bytes32(value) -> cleaned {\n        cleaned := value\n    }\n\n    function abi_encode_t_bytes32_to_t_bytes32_fromStack(value, pos) {\n        mstore(pos, cleanup_t_bytes32(value))\n    }\n\n    function abi_encode_t_uint256_to_t_uint256_fromStack(value, pos) {\n        mstore(pos, cleanup_t_uint256(value))\n    }\n\n    function abi_encode_tuple_t_bytes32_t_uint256__to_t_bytes32_t_uint256__fromStack_reversed(headStart , value1, value0) -> tail {\n        tail := add(headStart, 64)\n\n        abi_encode_t_bytes32_to_t_bytes32_fromStack(value0,  add(headStart, 0))\n\n        abi_encode_t_uint256_to_t_uint256_fromStack(value1,  add(headStart, 32))\n\n    }\n\n    function validator_revert_t_bytes32(value) {\n        if iszero(eq(value, cleanup_t_bytes32(value))) { revert(0, 0) }\n    }\n\n    function abi_decode_t_bytes32(offset, end) -> value {\n        value := calldataload(offset)\n        validator_revert_t_bytes32(value)\n    }\n\n    function abi_decode_tuple_t_uint256t_bytes32(headStart, dataEnd) -> value0, value1 {\n        if slt(sub(dataEnd, headStart), 64) { revert_error_dbdddcbe895c83990c08b3492a0e83918d802a52331272ac6fdb6a7c4aea3b1b() }\n\n        {\n\n            let offset := 0\n\n            value0 := abi_decode_t_uint256(add(headStart, offset), dataEnd)\n        }\n\n        {\n\n            let offset := 32\n\n            value1 := abi_decode_t_bytes32(add(headStart, offset), dataEnd)\n        }\n\n    }\n\n    function cleanup_t_uint160(value) -> cleaned {\n        cleaned := and(value, 0xffffffffffffffffffffffffffffffffffffffff)\n    }\n\n    function identity(value) -> ret {\n        ret := value\n    }\n\n    function convert_t_uint160_to_t_uint160(value) -> converted {\n        converted := cleanup_t_uint160(identity(cleanup_t_uint160(value)))\n    }\n\n    function convert_t_uint160_to_t_address(value) -> converted {\n        converted := convert_t_uint160_to_t_uint160(value)\n    }\n\n    function convert_t_contract$_OrderRegistry_$867_to_t_address(value) -> converted {\n        converted := convert_t_uint160_to_t_address(value)\n    }\n\n    function abi_encode_t_contract$_OrderRegistry_$867_to_t_address_fromStack(value, pos) {\n        mstore(pos, convert_t_contract$_OrderRegistry_$867_to_t_address(value))\n    }\n\n    function abi_encode_tuple_t_contract$_OrderRegistry_$867__to_t_address__fromStack_reversed(headStart , value0) -> tail {\n        tail := add(headStart, 32)\n\n        abi_encode_t_contract$_OrderRegistry_$867_to_t_address_fromStack(value0,  add(headStart, 0))\n\n    }\n\n    function abi_encode_tuple_t_uint256__to_t_uint256__fromStack_reversed(headStart , value0) -> tail {\n        tail := add(headStart, 32)\n\n        abi_encode_t_uint256_to_t_uint256_fromStack(value0,  add(headStart, 0))\n\n    }\n\n    function cleanup_t_address(value) -> cleaned {\n        cleaned := cleanup_t_uint160(value)\n    }\n\n    function validator_revert_t_address(value) {\n        if iszero(eq(value, cleanup_t_address(value))) { revert(0, 0) }\n    }\n\n    function abi_decode_t_address_fromMemory(offset, end) -> value {\n        value := mload(offset)\n        validator_revert_t_address(value)\n    }\n\n    function abi_decode_tuple_t_address_fromMemory(headStart, dataEnd) -> value0 {\n        if slt(sub(dataEnd, headStart), 32) { revert_error_dbdddcbe895c83990c08b3492a0e83918d802a52331272ac6fdb6a7c4aea3b1b() }\n\n        {\n\n            let offset := 0\n\n            value0 := abi_decode_t_address_fromMemory(add(headStart, offset), dataEnd)\n        }\n\n    }\n\n    function array_storeLengthForEncoding_t_string_memory_ptr_fromStack(pos, length) -> updated_pos {\n        mstore(pos, length)\n        updated_pos := add(pos, 0x20)\n    }\n\n    function store_literal_in_memory_c94dc73c7af6ca7e4aa5396cfbac7e20f4914d2b746943cb7c1e91cc97d8efc5(memPtr) {\n\n        mstore(add(memPtr, 0), \"Only seller or buyer can notariz\")\n\n        mstore(add(memPtr, 32), \"e\")\n\n    }\n\n    function abi_encode_t_stringliteral_c94dc73c7af6ca7e4aa5396cfbac7e20f4914d2b746943cb7c1e91cc97d8efc5_to_t_string_memory_ptr_fromStack(pos) -> end {\n        pos := array_storeLengthForEncoding_t_string_memory_ptr_fromStack(pos, 33)\n        store_literal_in_memory_c94dc73c7af6ca7e4aa5396cfbac7e20f4914d2b746943cb7c1e91cc97d8efc5(pos)\n        end := add(pos, 64)\n    }\n\n    function abi_encode_tuple_t_stringliteral_c94dc73c7af6ca7e4aa5396cfbac7e20f4914d2b746943cb7c1e91cc97d8efc5__to_t_string_memory_ptr__fromStack_reversed(headStart ) -> tail {\n        tail := add(headStart, 32)\n\n        mstore(add(headStart, 0), sub(tail, headStart))\n        tail := abi_encode_t_stringliteral_c94dc73c7af6ca7e4aa5396cfbac7e20f4914d2b746943cb7c1e91cc97d8efc5_to_t_string_memory_ptr_fromStack( tail)\n\n    }\n\n    function store_literal_in_memory_221bd5754386c95752ab74f7e97227ba4816d3932c45cd8849529fe0a0a91415(memPtr) {\n\n        mstore(add(memPtr, 0), \"Invalid hash\")\n\n    }\n\n    function abi_encode_t_stringliteral_221bd5754386c95752ab74f7e97227ba4816d3932c45cd8849529fe0a0a91415_to_t_string_memory_ptr_fromStack(pos) -> end {\n        pos := array_storeLengthForEncoding_t_string_memory_ptr_fromStack(pos, 12)\n        store_literal_in_memory_221bd5754386c95752ab74f7e97227ba4816d3932c45cd8849529fe0a0a91415(pos)\n        end := add(pos, 32)\n    }\n\n    function abi_encode_tuple_t_stringliteral_221bd5754386c95752ab74f7e97227ba4816d3932c45cd8849529fe0a0a91415__to_t_string_memory_ptr__fromStack_reversed(headStart ) -> tail {\n        tail := add(headStart, 32)\n\n        mstore(add(headStart, 0), sub(tail, headStart))\n        tail := abi_encode_t_stringliteral_221bd5754386c95752ab74f7e97227ba4816d3932c45cd8849529fe0a0a91415_to_t_string_memory_ptr_fromStack( tail)\n\n    }\n\n    function store_literal_in_memory_d6ba4c68d764a6bd17425eca03c2f33e30afab2506a599b4fff6bbf5feba6668(memPtr) {\n\n        mstore(add(memPtr, 0), \"Already notarized\")\n\n    }\n\n    function abi_encode_t_stringliteral_d6ba4c68d764a6bd17425eca03c2f33e30afab2506a599b4fff6bbf5feba6668_to_t_string_memory_ptr_fromStack(pos) -> end {\n        pos := array_storeLengthForEncoding_t_string_memory_ptr_fromStack(pos, 17)\n        store_literal_in_memory_d6ba4c68d764a6bd17425eca03c2f33e30afab2506a599b4fff6bbf5feba6668(pos)\n        end := add(pos, 32)\n    }\n\n    function abi_encode_tuple_t_stringliteral_d6ba4c68d764a6bd17425eca03c2f33e30afab2506a599b4fff6bbf5feba6668__to_t_string_memory_ptr__fromStack_reversed(headStart ) -> tail {\n        tail := add(headStart, 32)\n\n        mstore(add(headStart, 0), sub(tail, headStart))\n        tail := abi_encode_t_stringliteral_d6ba4c68d764a6bd17425eca03c2f33e30afab2506a599b4fff6bbf5feba6668_to_t_string_memory_ptr_fromStack( tail)\n\n    }\n\n}\n",
+      "contents": "{\n\n    function allocate_unbounded() -> memPtr {\n        memPtr := mload(64)\n    }\n\n    function revert_error_dbdddcbe895c83990c08b3492a0e83918d802a52331272ac6fdb6a7c4aea3b1b() {\n        revert(0, 0)\n    }\n\n    function revert_error_c1322bf8034eace5e0b5c7295db60986aa89aae5e0ea0873e4689e076861a5db() {\n        revert(0, 0)\n    }\n\n    function cleanup_t_uint256(value) -> cleaned {\n        cleaned := value\n    }\n\n    function validator_revert_t_uint256(value) {\n        if iszero(eq(value, cleanup_t_uint256(value))) { revert(0, 0) }\n    }\n\n    function abi_decode_t_uint256(offset, end) -> value {\n        value := calldataload(offset)\n        validator_revert_t_uint256(value)\n    }\n\n    function abi_decode_tuple_t_uint256(headStart, dataEnd) -> value0 {\n        if slt(sub(dataEnd, headStart), 32) { revert_error_dbdddcbe895c83990c08b3492a0e83918d802a52331272ac6fdb6a7c4aea3b1b() }\n\n        {\n\n            let offset := 0\n\n            value0 := abi_decode_t_uint256(add(headStart, offset), dataEnd)\n        }\n\n    }\n\n    function cleanup_t_bytes32(value) -> cleaned {\n        cleaned := value\n    }\n\n    function abi_encode_t_bytes32_to_t_bytes32_fromStack(value, pos) {\n        mstore(pos, cleanup_t_bytes32(value))\n    }\n\n    function abi_encode_t_uint256_to_t_uint256_fromStack(value, pos) {\n        mstore(pos, cleanup_t_uint256(value))\n    }\n\n    function abi_encode_tuple_t_bytes32_t_uint256__to_t_bytes32_t_uint256__fromStack_reversed(headStart , value1, value0) -> tail {\n        tail := add(headStart, 64)\n\n        abi_encode_t_bytes32_to_t_bytes32_fromStack(value0,  add(headStart, 0))\n\n        abi_encode_t_uint256_to_t_uint256_fromStack(value1,  add(headStart, 32))\n\n    }\n\n    function validator_revert_t_bytes32(value) {\n        if iszero(eq(value, cleanup_t_bytes32(value))) { revert(0, 0) }\n    }\n\n    function abi_decode_t_bytes32(offset, end) -> value {\n        value := calldataload(offset)\n        validator_revert_t_bytes32(value)\n    }\n\n    function abi_decode_tuple_t_uint256t_bytes32(headStart, dataEnd) -> value0, value1 {\n        if slt(sub(dataEnd, headStart), 64) { revert_error_dbdddcbe895c83990c08b3492a0e83918d802a52331272ac6fdb6a7c4aea3b1b() }\n\n        {\n\n            let offset := 0\n\n            value0 := abi_decode_t_uint256(add(headStart, offset), dataEnd)\n        }\n\n        {\n\n            let offset := 32\n\n            value1 := abi_decode_t_bytes32(add(headStart, offset), dataEnd)\n        }\n\n    }\n\n    function cleanup_t_uint160(value) -> cleaned {\n        cleaned := and(value, 0xffffffffffffffffffffffffffffffffffffffff)\n    }\n\n    function identity(value) -> ret {\n        ret := value\n    }\n\n    function convert_t_uint160_to_t_uint160(value) -> converted {\n        converted := cleanup_t_uint160(identity(cleanup_t_uint160(value)))\n    }\n\n    function convert_t_uint160_to_t_address(value) -> converted {\n        converted := convert_t_uint160_to_t_uint160(value)\n    }\n\n    function convert_t_contract$_OrderRegistry_$918_to_t_address(value) -> converted {\n        converted := convert_t_uint160_to_t_address(value)\n    }\n\n    function abi_encode_t_contract$_OrderRegistry_$918_to_t_address_fromStack(value, pos) {\n        mstore(pos, convert_t_contract$_OrderRegistry_$918_to_t_address(value))\n    }\n\n    function abi_encode_tuple_t_contract$_OrderRegistry_$918__to_t_address__fromStack_reversed(headStart , value0) -> tail {\n        tail := add(headStart, 32)\n\n        abi_encode_t_contract$_OrderRegistry_$918_to_t_address_fromStack(value0,  add(headStart, 0))\n\n    }\n\n    function abi_encode_tuple_t_uint256__to_t_uint256__fromStack_reversed(headStart , value0) -> tail {\n        tail := add(headStart, 32)\n\n        abi_encode_t_uint256_to_t_uint256_fromStack(value0,  add(headStart, 0))\n\n    }\n\n    function cleanup_t_address(value) -> cleaned {\n        cleaned := cleanup_t_uint160(value)\n    }\n\n    function validator_revert_t_address(value) {\n        if iszero(eq(value, cleanup_t_address(value))) { revert(0, 0) }\n    }\n\n    function abi_decode_t_address_fromMemory(offset, end) -> value {\n        value := mload(offset)\n        validator_revert_t_address(value)\n    }\n\n    function abi_decode_tuple_t_address_fromMemory(headStart, dataEnd) -> value0 {\n        if slt(sub(dataEnd, headStart), 32) { revert_error_dbdddcbe895c83990c08b3492a0e83918d802a52331272ac6fdb6a7c4aea3b1b() }\n\n        {\n\n            let offset := 0\n\n            value0 := abi_decode_t_address_fromMemory(add(headStart, offset), dataEnd)\n        }\n\n    }\n\n    function array_storeLengthForEncoding_t_string_memory_ptr_fromStack(pos, length) -> updated_pos {\n        mstore(pos, length)\n        updated_pos := add(pos, 0x20)\n    }\n\n    function store_literal_in_memory_c94dc73c7af6ca7e4aa5396cfbac7e20f4914d2b746943cb7c1e91cc97d8efc5(memPtr) {\n\n        mstore(add(memPtr, 0), \"Only seller or buyer can notariz\")\n\n        mstore(add(memPtr, 32), \"e\")\n\n    }\n\n    function abi_encode_t_stringliteral_c94dc73c7af6ca7e4aa5396cfbac7e20f4914d2b746943cb7c1e91cc97d8efc5_to_t_string_memory_ptr_fromStack(pos) -> end {\n        pos := array_storeLengthForEncoding_t_string_memory_ptr_fromStack(pos, 33)\n        store_literal_in_memory_c94dc73c7af6ca7e4aa5396cfbac7e20f4914d2b746943cb7c1e91cc97d8efc5(pos)\n        end := add(pos, 64)\n    }\n\n    function abi_encode_tuple_t_stringliteral_c94dc73c7af6ca7e4aa5396cfbac7e20f4914d2b746943cb7c1e91cc97d8efc5__to_t_string_memory_ptr__fromStack_reversed(headStart ) -> tail {\n        tail := add(headStart, 32)\n\n        mstore(add(headStart, 0), sub(tail, headStart))\n        tail := abi_encode_t_stringliteral_c94dc73c7af6ca7e4aa5396cfbac7e20f4914d2b746943cb7c1e91cc97d8efc5_to_t_string_memory_ptr_fromStack( tail)\n\n    }\n\n    function store_literal_in_memory_221bd5754386c95752ab74f7e97227ba4816d3932c45cd8849529fe0a0a91415(memPtr) {\n\n        mstore(add(memPtr, 0), \"Invalid hash\")\n\n    }\n\n    function abi_encode_t_stringliteral_221bd5754386c95752ab74f7e97227ba4816d3932c45cd8849529fe0a0a91415_to_t_string_memory_ptr_fromStack(pos) -> end {\n        pos := array_storeLengthForEncoding_t_string_memory_ptr_fromStack(pos, 12)\n        store_literal_in_memory_221bd5754386c95752ab74f7e97227ba4816d3932c45cd8849529fe0a0a91415(pos)\n        end := add(pos, 32)\n    }\n\n    function abi_encode_tuple_t_stringliteral_221bd5754386c95752ab74f7e97227ba4816d3932c45cd8849529fe0a0a91415__to_t_string_memory_ptr__fromStack_reversed(headStart ) -> tail {\n        tail := add(headStart, 32)\n\n        mstore(add(headStart, 0), sub(tail, headStart))\n        tail := abi_encode_t_stringliteral_221bd5754386c95752ab74f7e97227ba4816d3932c45cd8849529fe0a0a91415_to_t_string_memory_ptr_fromStack( tail)\n\n    }\n\n    function store_literal_in_memory_d6ba4c68d764a6bd17425eca03c2f33e30afab2506a599b4fff6bbf5feba6668(memPtr) {\n\n        mstore(add(memPtr, 0), \"Already notarized\")\n\n    }\n\n    function abi_encode_t_stringliteral_d6ba4c68d764a6bd17425eca03c2f33e30afab2506a599b4fff6bbf5feba6668_to_t_string_memory_ptr_fromStack(pos) -> end {\n        pos := array_storeLengthForEncoding_t_string_memory_ptr_fromStack(pos, 17)\n        store_literal_in_memory_d6ba4c68d764a6bd17425eca03c2f33e30afab2506a599b4fff6bbf5feba6668(pos)\n        end := add(pos, 32)\n    }\n\n    function abi_encode_tuple_t_stringliteral_d6ba4c68d764a6bd17425eca03c2f33e30afab2506a599b4fff6bbf5feba6668__to_t_string_memory_ptr__fromStack_reversed(headStart ) -> tail {\n        tail := add(headStart, 32)\n\n        mstore(add(headStart, 0), sub(tail, headStart))\n        tail := abi_encode_t_stringliteral_d6ba4c68d764a6bd17425eca03c2f33e30afab2506a599b4fff6bbf5feba6668_to_t_string_memory_ptr_fromStack( tail)\n\n    }\n\n}\n",
       "id": 7,
       "language": "Yul",
       "name": "#utility.yul"
@@ -4724,18 +4724,18 @@
     "absolutePath": "project:/contracts/Notarization.sol",
     "exportedSymbols": {
       "Notarization": [
-        747
+        798
       ],
       "OrderRegistry": [
-        867
+        918
       ]
     },
-    "id": 748,
+    "id": 799,
     "license": "MIT",
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 430,
+        "id": 481,
         "literals": [
           "solidity",
           "^",
@@ -4748,11 +4748,11 @@
       {
         "absolutePath": "project:/contracts/OrderRegistry.sol",
         "file": "./OrderRegistry.sol",
-        "id": 431,
+        "id": 482,
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
-        "scope": 748,
-        "sourceUnit": 868,
+        "scope": 799,
+        "sourceUnit": 919,
         "src": "58:29:3",
         "symbolAliases": [],
         "unitAlias": ""
@@ -4764,9 +4764,9 @@
         "contractDependencies": [],
         "contractKind": "contract",
         "fullyImplemented": true,
-        "id": 747,
+        "id": 798,
         "linearizedBaseContracts": [
-          747
+          798
         ],
         "name": "Notarization",
         "nameLocation": "98:12:3",
@@ -4774,16 +4774,16 @@
         "nodes": [
           {
             "canonicalName": "Notarization.Record",
-            "id": 436,
+            "id": 487,
             "members": [
               {
                 "constant": false,
-                "id": 433,
+                "id": 484,
                 "mutability": "mutable",
                 "name": "hash",
                 "nameLocation": "149:4:3",
                 "nodeType": "VariableDeclaration",
-                "scope": 436,
+                "scope": 487,
                 "src": "141:12:3",
                 "stateVariable": false,
                 "storageLocation": "default",
@@ -4792,7 +4792,7 @@
                   "typeString": "bytes32"
                 },
                 "typeName": {
-                  "id": 432,
+                  "id": 483,
                   "name": "bytes32",
                   "nodeType": "ElementaryTypeName",
                   "src": "141:7:3",
@@ -4805,12 +4805,12 @@
               },
               {
                 "constant": false,
-                "id": 435,
+                "id": 486,
                 "mutability": "mutable",
                 "name": "timestamp",
                 "nameLocation": "171:9:3",
                 "nodeType": "VariableDeclaration",
-                "scope": 436,
+                "scope": 487,
                 "src": "163:17:3",
                 "stateVariable": false,
                 "storageLocation": "default",
@@ -4819,7 +4819,7 @@
                   "typeString": "uint256"
                 },
                 "typeName": {
-                  "id": 434,
+                  "id": 485,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
                   "src": "163:7:3",
@@ -4834,43 +4834,43 @@
             "name": "Record",
             "nameLocation": "124:6:3",
             "nodeType": "StructDefinition",
-            "scope": 747,
+            "scope": 798,
             "src": "117:70:3",
             "visibility": "public"
           },
           {
             "constant": false,
             "functionSelector": "b371564b",
-            "id": 439,
+            "id": 490,
             "mutability": "mutable",
             "name": "orderRegistry",
             "nameLocation": "214:13:3",
             "nodeType": "VariableDeclaration",
-            "scope": 747,
+            "scope": 798,
             "src": "193:34:3",
             "stateVariable": true,
             "storageLocation": "default",
             "typeDescriptions": {
-              "typeIdentifier": "t_contract$_OrderRegistry_$867",
+              "typeIdentifier": "t_contract$_OrderRegistry_$918",
               "typeString": "contract OrderRegistry"
             },
             "typeName": {
-              "id": 438,
+              "id": 489,
               "nodeType": "UserDefinedTypeName",
               "pathNode": {
-                "id": 437,
+                "id": 488,
                 "name": "OrderRegistry",
                 "nameLocations": [
                   "193:13:3"
                 ],
                 "nodeType": "IdentifierPath",
-                "referencedDeclaration": 867,
+                "referencedDeclaration": 918,
                 "src": "193:13:3"
               },
-              "referencedDeclaration": 867,
+              "referencedDeclaration": 918,
               "src": "193:13:3",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_OrderRegistry_$867",
+                "typeIdentifier": "t_contract$_OrderRegistry_$918",
                 "typeString": "contract OrderRegistry"
               }
             },
@@ -4879,25 +4879,25 @@
           {
             "constant": false,
             "functionSelector": "aed0cad0",
-            "id": 444,
+            "id": 495,
             "mutability": "mutable",
             "name": "purchaseNotarized",
             "nameLocation": "268:17:3",
             "nodeType": "VariableDeclaration",
-            "scope": 747,
+            "scope": 798,
             "src": "234:51:3",
             "stateVariable": true,
             "storageLocation": "default",
             "typeDescriptions": {
-              "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$436_storage_$",
+              "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$487_storage_$",
               "typeString": "mapping(uint256 => struct Notarization.Record)"
             },
             "typeName": {
-              "id": 443,
+              "id": 494,
               "keyName": "",
               "keyNameLocation": "-1:-1:-1",
               "keyType": {
-                "id": 440,
+                "id": 491,
                 "name": "uint256",
                 "nodeType": "ElementaryTypeName",
                 "src": "242:7:3",
@@ -4909,28 +4909,28 @@
               "nodeType": "Mapping",
               "src": "234:26:3",
               "typeDescriptions": {
-                "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$436_storage_$",
+                "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$487_storage_$",
                 "typeString": "mapping(uint256 => struct Notarization.Record)"
               },
               "valueName": "",
               "valueNameLocation": "-1:-1:-1",
               "valueType": {
-                "id": 442,
+                "id": 493,
                 "nodeType": "UserDefinedTypeName",
                 "pathNode": {
-                  "id": 441,
+                  "id": 492,
                   "name": "Record",
                   "nameLocations": [
                     "253:6:3"
                   ],
                   "nodeType": "IdentifierPath",
-                  "referencedDeclaration": 436,
+                  "referencedDeclaration": 487,
                   "src": "253:6:3"
                 },
-                "referencedDeclaration": 436,
+                "referencedDeclaration": 487,
                 "src": "253:6:3",
                 "typeDescriptions": {
-                  "typeIdentifier": "t_struct$_Record_$436_storage_ptr",
+                  "typeIdentifier": "t_struct$_Record_$487_storage_ptr",
                   "typeString": "struct Notarization.Record"
                 }
               }
@@ -4940,25 +4940,25 @@
           {
             "constant": false,
             "functionSelector": "b1282f55",
-            "id": 449,
+            "id": 500,
             "mutability": "mutable",
             "name": "shipmentNotarized",
             "nameLocation": "325:17:3",
             "nodeType": "VariableDeclaration",
-            "scope": 747,
+            "scope": 798,
             "src": "291:51:3",
             "stateVariable": true,
             "storageLocation": "default",
             "typeDescriptions": {
-              "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$436_storage_$",
+              "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$487_storage_$",
               "typeString": "mapping(uint256 => struct Notarization.Record)"
             },
             "typeName": {
-              "id": 448,
+              "id": 499,
               "keyName": "",
               "keyNameLocation": "-1:-1:-1",
               "keyType": {
-                "id": 445,
+                "id": 496,
                 "name": "uint256",
                 "nodeType": "ElementaryTypeName",
                 "src": "299:7:3",
@@ -4970,28 +4970,28 @@
               "nodeType": "Mapping",
               "src": "291:26:3",
               "typeDescriptions": {
-                "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$436_storage_$",
+                "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$487_storage_$",
                 "typeString": "mapping(uint256 => struct Notarization.Record)"
               },
               "valueName": "",
               "valueNameLocation": "-1:-1:-1",
               "valueType": {
-                "id": 447,
+                "id": 498,
                 "nodeType": "UserDefinedTypeName",
                 "pathNode": {
-                  "id": 446,
+                  "id": 497,
                   "name": "Record",
                   "nameLocations": [
                     "310:6:3"
                   ],
                   "nodeType": "IdentifierPath",
-                  "referencedDeclaration": 436,
+                  "referencedDeclaration": 487,
                   "src": "310:6:3"
                 },
-                "referencedDeclaration": 436,
+                "referencedDeclaration": 487,
                 "src": "310:6:3",
                 "typeDescriptions": {
-                  "typeIdentifier": "t_struct$_Record_$436_storage_ptr",
+                  "typeIdentifier": "t_struct$_Record_$487_storage_ptr",
                   "typeString": "struct Notarization.Record"
                 }
               }
@@ -5001,25 +5001,25 @@
           {
             "constant": false,
             "functionSelector": "e00d1034",
-            "id": 454,
+            "id": 505,
             "mutability": "mutable",
             "name": "deliveryNotarized",
             "nameLocation": "382:17:3",
             "nodeType": "VariableDeclaration",
-            "scope": 747,
+            "scope": 798,
             "src": "348:51:3",
             "stateVariable": true,
             "storageLocation": "default",
             "typeDescriptions": {
-              "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$436_storage_$",
+              "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$487_storage_$",
               "typeString": "mapping(uint256 => struct Notarization.Record)"
             },
             "typeName": {
-              "id": 453,
+              "id": 504,
               "keyName": "",
               "keyNameLocation": "-1:-1:-1",
               "keyType": {
-                "id": 450,
+                "id": 501,
                 "name": "uint256",
                 "nodeType": "ElementaryTypeName",
                 "src": "356:7:3",
@@ -5031,28 +5031,28 @@
               "nodeType": "Mapping",
               "src": "348:26:3",
               "typeDescriptions": {
-                "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$436_storage_$",
+                "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$487_storage_$",
                 "typeString": "mapping(uint256 => struct Notarization.Record)"
               },
               "valueName": "",
               "valueNameLocation": "-1:-1:-1",
               "valueType": {
-                "id": 452,
+                "id": 503,
                 "nodeType": "UserDefinedTypeName",
                 "pathNode": {
-                  "id": 451,
+                  "id": 502,
                   "name": "Record",
                   "nameLocations": [
                     "367:6:3"
                   ],
                   "nodeType": "IdentifierPath",
-                  "referencedDeclaration": 436,
+                  "referencedDeclaration": 487,
                   "src": "367:6:3"
                 },
-                "referencedDeclaration": 436,
+                "referencedDeclaration": 487,
                 "src": "367:6:3",
                 "typeDescriptions": {
-                  "typeIdentifier": "t_struct$_Record_$436_storage_ptr",
+                  "typeIdentifier": "t_struct$_Record_$487_storage_ptr",
                   "typeString": "struct Notarization.Record"
                 }
               }
@@ -5062,23 +5062,23 @@
           {
             "anonymous": false,
             "eventSelector": "a63698ae04e1d2402c4ade32167f02337e2b7fa4a4177f72c2797731f0b540d3",
-            "id": 462,
+            "id": 513,
             "name": "PurchaseNotarized",
             "nameLocation": "412:17:3",
             "nodeType": "EventDefinition",
             "parameters": {
-              "id": 461,
+              "id": 512,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 456,
+                  "id": 507,
                   "indexed": true,
                   "mutability": "mutable",
                   "name": "orderId",
                   "nameLocation": "446:7:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 462,
+                  "scope": 513,
                   "src": "430:23:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5087,7 +5087,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 455,
+                    "id": 506,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "430:7:3",
@@ -5100,13 +5100,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 458,
+                  "id": 509,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "hash",
                   "nameLocation": "463:4:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 462,
+                  "scope": 513,
                   "src": "455:12:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5115,7 +5115,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 457,
+                    "id": 508,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "455:7:3",
@@ -5128,13 +5128,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 460,
+                  "id": 511,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "timestamp",
                   "nameLocation": "477:9:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 462,
+                  "scope": 513,
                   "src": "469:17:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5143,7 +5143,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 459,
+                    "id": 510,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "469:7:3",
@@ -5162,23 +5162,23 @@
           {
             "anonymous": false,
             "eventSelector": "ca3df4830d7723abc1b695e55c74c6cfbd970ba40be5ea9bc32125606ffa9770",
-            "id": 470,
+            "id": 521,
             "name": "ShipmentNotarized",
             "nameLocation": "499:17:3",
             "nodeType": "EventDefinition",
             "parameters": {
-              "id": 469,
+              "id": 520,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 464,
+                  "id": 515,
                   "indexed": true,
                   "mutability": "mutable",
                   "name": "orderId",
                   "nameLocation": "533:7:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 470,
+                  "scope": 521,
                   "src": "517:23:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5187,7 +5187,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 463,
+                    "id": 514,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "517:7:3",
@@ -5200,13 +5200,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 466,
+                  "id": 517,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "hash",
                   "nameLocation": "550:4:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 470,
+                  "scope": 521,
                   "src": "542:12:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5215,7 +5215,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 465,
+                    "id": 516,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "542:7:3",
@@ -5228,13 +5228,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 468,
+                  "id": 519,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "timestamp",
                   "nameLocation": "564:9:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 470,
+                  "scope": 521,
                   "src": "556:17:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5243,7 +5243,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 467,
+                    "id": 518,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "556:7:3",
@@ -5262,23 +5262,23 @@
           {
             "anonymous": false,
             "eventSelector": "bab7405e554d907d31baf53a1e57e1d6a04428dbe843a8e2b28c21dc61da133c",
-            "id": 478,
+            "id": 529,
             "name": "DeliveryNotarized",
             "nameLocation": "586:17:3",
             "nodeType": "EventDefinition",
             "parameters": {
-              "id": 477,
+              "id": 528,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 472,
+                  "id": 523,
                   "indexed": true,
                   "mutability": "mutable",
                   "name": "orderId",
                   "nameLocation": "620:7:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 478,
+                  "scope": 529,
                   "src": "604:23:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5287,7 +5287,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 471,
+                    "id": 522,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "604:7:3",
@@ -5300,13 +5300,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 474,
+                  "id": 525,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "hash",
                   "nameLocation": "637:4:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 478,
+                  "scope": 529,
                   "src": "629:12:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5315,7 +5315,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 473,
+                    "id": 524,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "629:7:3",
@@ -5328,13 +5328,13 @@
                 },
                 {
                   "constant": false,
-                  "id": 476,
+                  "id": 527,
                   "indexed": false,
                   "mutability": "mutable",
                   "name": "timestamp",
                   "nameLocation": "651:9:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 478,
+                  "scope": 529,
                   "src": "643:17:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5343,7 +5343,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 475,
+                    "id": 526,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "643:7:3",
@@ -5361,23 +5361,23 @@
           },
           {
             "body": {
-              "id": 510,
+              "id": 561,
               "nodeType": "Block",
               "src": "712:233:3",
               "statements": [
                 {
                   "assignments": [
-                    483
+                    534
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 483,
+                      "id": 534,
                       "mutability": "mutable",
                       "name": "seller",
                       "nameLocation": "730:6:3",
                       "nodeType": "VariableDeclaration",
-                      "scope": 510,
+                      "scope": 561,
                       "src": "722:14:3",
                       "stateVariable": false,
                       "storageLocation": "default",
@@ -5386,7 +5386,7 @@
                         "typeString": "address"
                       },
                       "typeName": {
-                        "id": 482,
+                        "id": 533,
                         "name": "address",
                         "nodeType": "ElementaryTypeName",
                         "src": "722:7:3",
@@ -5399,15 +5399,15 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 488,
+                  "id": 539,
                   "initialValue": {
                     "arguments": [
                       {
-                        "id": 486,
+                        "id": 537,
                         "name": "orderId",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 480,
+                        "referencedDeclaration": 531,
                         "src": "763:7:3",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
@@ -5423,18 +5423,18 @@
                         }
                       ],
                       "expression": {
-                        "id": 484,
+                        "id": 535,
                         "name": "orderRegistry",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 439,
+                        "referencedDeclaration": 490,
                         "src": "739:13:3",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_contract$_OrderRegistry_$867",
+                          "typeIdentifier": "t_contract$_OrderRegistry_$918",
                           "typeString": "contract OrderRegistry"
                         }
                       },
-                      "id": 485,
+                      "id": 536,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -5442,14 +5442,14 @@
                       "memberLocation": "753:9:3",
                       "memberName": "getSeller",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 840,
+                      "referencedDeclaration": 891,
                       "src": "739:23:3",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_external_view$_t_uint256_$returns$_t_address_$",
                         "typeString": "function (uint256) view external returns (address)"
                       }
                     },
-                    "id": 487,
+                    "id": 538,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -5470,17 +5470,17 @@
                 },
                 {
                   "assignments": [
-                    490
+                    541
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 490,
+                      "id": 541,
                       "mutability": "mutable",
                       "name": "buyer",
                       "nameLocation": "789:5:3",
                       "nodeType": "VariableDeclaration",
-                      "scope": 510,
+                      "scope": 561,
                       "src": "781:13:3",
                       "stateVariable": false,
                       "storageLocation": "default",
@@ -5489,7 +5489,7 @@
                         "typeString": "address"
                       },
                       "typeName": {
-                        "id": 489,
+                        "id": 540,
                         "name": "address",
                         "nodeType": "ElementaryTypeName",
                         "src": "781:7:3",
@@ -5502,15 +5502,15 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 495,
+                  "id": 546,
                   "initialValue": {
                     "arguments": [
                       {
-                        "id": 493,
+                        "id": 544,
                         "name": "orderId",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 480,
+                        "referencedDeclaration": 531,
                         "src": "820:7:3",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
@@ -5526,18 +5526,18 @@
                         }
                       ],
                       "expression": {
-                        "id": 491,
+                        "id": 542,
                         "name": "orderRegistry",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 439,
+                        "referencedDeclaration": 490,
                         "src": "797:13:3",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_contract$_OrderRegistry_$867",
+                          "typeIdentifier": "t_contract$_OrderRegistry_$918",
                           "typeString": "contract OrderRegistry"
                         }
                       },
-                      "id": 492,
+                      "id": 543,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -5545,14 +5545,14 @@
                       "memberLocation": "811:8:3",
                       "memberName": "getBuyer",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 827,
+                      "referencedDeclaration": 878,
                       "src": "797:22:3",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_external_view$_t_uint256_$returns$_t_address_$",
                         "typeString": "function (uint256) view external returns (address)"
                       }
                     },
-                    "id": 494,
+                    "id": 545,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -5579,7 +5579,7 @@
                           "typeIdentifier": "t_bool",
                           "typeString": "bool"
                         },
-                        "id": 505,
+                        "id": 556,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -5589,14 +5589,14 @@
                             "typeIdentifier": "t_address",
                             "typeString": "address"
                           },
-                          "id": 500,
+                          "id": 551,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
                           "lValueRequested": false,
                           "leftExpression": {
                             "expression": {
-                              "id": 497,
+                              "id": 548,
                               "name": "msg",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
@@ -5607,7 +5607,7 @@
                                 "typeString": "msg"
                               }
                             },
-                            "id": 498,
+                            "id": 549,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": false,
@@ -5624,11 +5624,11 @@
                           "nodeType": "BinaryOperation",
                           "operator": "==",
                           "rightExpression": {
-                            "id": 499,
+                            "id": 550,
                             "name": "seller",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 483,
+                            "referencedDeclaration": 534,
                             "src": "860:6:3",
                             "typeDescriptions": {
                               "typeIdentifier": "t_address",
@@ -5648,14 +5648,14 @@
                             "typeIdentifier": "t_address",
                             "typeString": "address"
                           },
-                          "id": 504,
+                          "id": 555,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
                           "lValueRequested": false,
                           "leftExpression": {
                             "expression": {
-                              "id": 501,
+                              "id": 552,
                               "name": "msg",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
@@ -5666,7 +5666,7 @@
                                 "typeString": "msg"
                               }
                             },
-                            "id": 502,
+                            "id": 553,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": false,
@@ -5683,11 +5683,11 @@
                           "nodeType": "BinaryOperation",
                           "operator": "==",
                           "rightExpression": {
-                            "id": 503,
+                            "id": 554,
                             "name": "buyer",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 490,
+                            "referencedDeclaration": 541,
                             "src": "884:5:3",
                             "typeDescriptions": {
                               "typeIdentifier": "t_address",
@@ -5708,7 +5708,7 @@
                       },
                       {
                         "hexValue": "4f6e6c792073656c6c6572206f722062757965722063616e206e6f746172697a65",
-                        "id": 506,
+                        "id": 557,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -5734,7 +5734,7 @@
                           "typeString": "literal_string \"Only seller or buyer can notarize\""
                         }
                       ],
-                      "id": 496,
+                      "id": 547,
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
@@ -5748,7 +5748,7 @@
                         "typeString": "function (bool,string memory) pure"
                       }
                     },
-                    "id": 507,
+                    "id": 558,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -5764,33 +5764,33 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 508,
+                  "id": 559,
                   "nodeType": "ExpressionStatement",
                   "src": "838:89:3"
                 },
                 {
-                  "id": 509,
+                  "id": 560,
                   "nodeType": "PlaceholderStatement",
                   "src": "937:1:3"
                 }
               ]
             },
-            "id": 511,
+            "id": 562,
             "name": "onlySellerOrBuyer",
             "nameLocation": "677:17:3",
             "nodeType": "ModifierDefinition",
             "parameters": {
-              "id": 481,
+              "id": 532,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 480,
+                  "id": 531,
                   "mutability": "mutable",
                   "name": "orderId",
                   "nameLocation": "703:7:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 511,
+                  "scope": 562,
                   "src": "695:15:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -5799,7 +5799,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 479,
+                    "id": 530,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "695:7:3",
@@ -5819,7 +5819,7 @@
           },
           {
             "body": {
-              "id": 532,
+              "id": 583,
               "nodeType": "Block",
               "src": "993:147:3",
               "statements": [
@@ -5831,17 +5831,17 @@
                           "typeIdentifier": "t_address",
                           "typeString": "address"
                         },
-                        "id": 522,
+                        "id": 573,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
                         "lValueRequested": false,
                         "leftExpression": {
-                          "id": 517,
+                          "id": 568,
                           "name": "orderRegistryAddress",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 513,
+                          "referencedDeclaration": 564,
                           "src": "1011:20:3",
                           "typeDescriptions": {
                             "typeIdentifier": "t_address",
@@ -5854,7 +5854,7 @@
                           "arguments": [
                             {
                               "hexValue": "30",
-                              "id": 520,
+                              "id": 571,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": true,
@@ -5876,7 +5876,7 @@
                                 "typeString": "int_const 0"
                               }
                             ],
-                            "id": 519,
+                            "id": 570,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": true,
@@ -5888,14 +5888,14 @@
                               "typeString": "type(address)"
                             },
                             "typeName": {
-                              "id": 518,
+                              "id": 569,
                               "name": "address",
                               "nodeType": "ElementaryTypeName",
                               "src": "1035:7:3",
                               "typeDescriptions": {}
                             }
                           },
-                          "id": 521,
+                          "id": 572,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": true,
@@ -5919,7 +5919,7 @@
                       },
                       {
                         "hexValue": "4f726465725265676973747279207265717569726564",
-                        "id": 523,
+                        "id": 574,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -5945,7 +5945,7 @@
                           "typeString": "literal_string \"OrderRegistry required\""
                         }
                       ],
-                      "id": 516,
+                      "id": 567,
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
@@ -5959,7 +5959,7 @@
                         "typeString": "function (bool,string memory) pure"
                       }
                     },
-                    "id": 524,
+                    "id": 575,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -5975,26 +5975,26 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 525,
+                  "id": 576,
                   "nodeType": "ExpressionStatement",
                   "src": "1003:69:3"
                 },
                 {
                   "expression": {
-                    "id": 530,
+                    "id": 581,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
-                      "id": 526,
+                      "id": 577,
                       "name": "orderRegistry",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 439,
+                      "referencedDeclaration": 490,
                       "src": "1082:13:3",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_contract$_OrderRegistry_$867",
+                        "typeIdentifier": "t_contract$_OrderRegistry_$918",
                         "typeString": "contract OrderRegistry"
                       }
                     },
@@ -6003,11 +6003,11 @@
                     "rightHandSide": {
                       "arguments": [
                         {
-                          "id": 528,
+                          "id": 579,
                           "name": "orderRegistryAddress",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 513,
+                          "referencedDeclaration": 564,
                           "src": "1112:20:3",
                           "typeDescriptions": {
                             "typeIdentifier": "t_address",
@@ -6022,18 +6022,18 @@
                             "typeString": "address"
                           }
                         ],
-                        "id": 527,
+                        "id": 578,
                         "name": "OrderRegistry",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 867,
+                        "referencedDeclaration": 918,
                         "src": "1098:13:3",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_type$_t_contract$_OrderRegistry_$867_$",
+                          "typeIdentifier": "t_type$_t_contract$_OrderRegistry_$918_$",
                           "typeString": "type(contract OrderRegistry)"
                         }
                       },
-                      "id": 529,
+                      "id": 580,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -6045,23 +6045,23 @@
                       "src": "1098:35:3",
                       "tryCall": false,
                       "typeDescriptions": {
-                        "typeIdentifier": "t_contract$_OrderRegistry_$867",
+                        "typeIdentifier": "t_contract$_OrderRegistry_$918",
                         "typeString": "contract OrderRegistry"
                       }
                     },
                     "src": "1082:51:3",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_contract$_OrderRegistry_$867",
+                      "typeIdentifier": "t_contract$_OrderRegistry_$918",
                       "typeString": "contract OrderRegistry"
                     }
                   },
-                  "id": 531,
+                  "id": 582,
                   "nodeType": "ExpressionStatement",
                   "src": "1082:51:3"
                 }
               ]
             },
-            "id": 533,
+            "id": 584,
             "implemented": true,
             "kind": "constructor",
             "modifiers": [],
@@ -6069,17 +6069,17 @@
             "nameLocation": "-1:-1:-1",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 514,
+              "id": 565,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 513,
+                  "id": 564,
                   "mutability": "mutable",
                   "name": "orderRegistryAddress",
                   "nameLocation": "971:20:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 533,
+                  "scope": 584,
                   "src": "963:28:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6088,7 +6088,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 512,
+                    "id": 563,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "963:7:3",
@@ -6104,12 +6104,12 @@
               "src": "962:30:3"
             },
             "returnParameters": {
-              "id": 515,
+              "id": 566,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "993:0:3"
             },
-            "scope": 747,
+            "scope": 798,
             "src": "951:189:3",
             "stateMutability": "nonpayable",
             "virtual": false,
@@ -6117,7 +6117,7 @@
           },
           {
             "body": {
-              "id": 580,
+              "id": 631,
               "nodeType": "Block",
               "src": "1239:273:3",
               "statements": [
@@ -6129,17 +6129,17 @@
                           "typeIdentifier": "t_bytes32",
                           "typeString": "bytes32"
                         },
-                        "id": 549,
+                        "id": 600,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
                         "lValueRequested": false,
                         "leftExpression": {
-                          "id": 544,
+                          "id": 595,
                           "name": "hash",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 537,
+                          "referencedDeclaration": 588,
                           "src": "1257:4:3",
                           "typeDescriptions": {
                             "typeIdentifier": "t_bytes32",
@@ -6152,7 +6152,7 @@
                           "arguments": [
                             {
                               "hexValue": "30",
-                              "id": 547,
+                              "id": 598,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": true,
@@ -6174,7 +6174,7 @@
                                 "typeString": "int_const 0"
                               }
                             ],
-                            "id": 546,
+                            "id": 597,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": true,
@@ -6186,14 +6186,14 @@
                               "typeString": "type(bytes32)"
                             },
                             "typeName": {
-                              "id": 545,
+                              "id": 596,
                               "name": "bytes32",
                               "nodeType": "ElementaryTypeName",
                               "src": "1265:7:3",
                               "typeDescriptions": {}
                             }
                           },
-                          "id": 548,
+                          "id": 599,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": true,
@@ -6217,7 +6217,7 @@
                       },
                       {
                         "hexValue": "496e76616c69642068617368",
-                        "id": 550,
+                        "id": 601,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -6243,7 +6243,7 @@
                           "typeString": "literal_string \"Invalid hash\""
                         }
                       ],
-                      "id": 543,
+                      "id": 594,
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
@@ -6257,7 +6257,7 @@
                         "typeString": "function (bool,string memory) pure"
                       }
                     },
-                    "id": 551,
+                    "id": 602,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -6273,7 +6273,7 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 552,
+                  "id": 603,
                   "nodeType": "ExpressionStatement",
                   "src": "1249:43:3"
                 },
@@ -6285,7 +6285,7 @@
                           "typeIdentifier": "t_uint256",
                           "typeString": "uint256"
                         },
-                        "id": 559,
+                        "id": 610,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -6293,24 +6293,24 @@
                         "leftExpression": {
                           "expression": {
                             "baseExpression": {
-                              "id": 554,
+                              "id": 605,
                               "name": "purchaseNotarized",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 444,
+                              "referencedDeclaration": 495,
                               "src": "1310:17:3",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$436_storage_$",
+                                "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$487_storage_$",
                                 "typeString": "mapping(uint256 => struct Notarization.Record storage ref)"
                               }
                             },
-                            "id": 556,
+                            "id": 607,
                             "indexExpression": {
-                              "id": 555,
+                              "id": 606,
                               "name": "orderId",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 535,
+                              "referencedDeclaration": 586,
                               "src": "1328:7:3",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_uint256",
@@ -6324,11 +6324,11 @@
                             "nodeType": "IndexAccess",
                             "src": "1310:26:3",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_struct$_Record_$436_storage",
+                              "typeIdentifier": "t_struct$_Record_$487_storage",
                               "typeString": "struct Notarization.Record storage ref"
                             }
                           },
-                          "id": 557,
+                          "id": 608,
                           "isConstant": false,
                           "isLValue": true,
                           "isPure": false,
@@ -6336,7 +6336,7 @@
                           "memberLocation": "1337:9:3",
                           "memberName": "timestamp",
                           "nodeType": "MemberAccess",
-                          "referencedDeclaration": 435,
+                          "referencedDeclaration": 486,
                           "src": "1310:36:3",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint256",
@@ -6347,7 +6347,7 @@
                         "operator": "==",
                         "rightExpression": {
                           "hexValue": "30",
-                          "id": 558,
+                          "id": 609,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": true,
@@ -6369,7 +6369,7 @@
                       },
                       {
                         "hexValue": "416c7265616479206e6f746172697a6564",
-                        "id": 560,
+                        "id": 611,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -6395,7 +6395,7 @@
                           "typeString": "literal_string \"Already notarized\""
                         }
                       ],
-                      "id": 553,
+                      "id": 604,
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
@@ -6409,7 +6409,7 @@
                         "typeString": "function (bool,string memory) pure"
                       }
                     },
-                    "id": 561,
+                    "id": 612,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -6425,37 +6425,37 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 562,
+                  "id": 613,
                   "nodeType": "ExpressionStatement",
                   "src": "1302:71:3"
                 },
                 {
                   "expression": {
-                    "id": 571,
+                    "id": 622,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
                       "baseExpression": {
-                        "id": 563,
+                        "id": 614,
                         "name": "purchaseNotarized",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 444,
+                        "referencedDeclaration": 495,
                         "src": "1383:17:3",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$436_storage_$",
+                          "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$487_storage_$",
                           "typeString": "mapping(uint256 => struct Notarization.Record storage ref)"
                         }
                       },
-                      "id": 565,
+                      "id": 616,
                       "indexExpression": {
-                        "id": 564,
+                        "id": 615,
                         "name": "orderId",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 535,
+                        "referencedDeclaration": 586,
                         "src": "1401:7:3",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
@@ -6469,7 +6469,7 @@
                       "nodeType": "IndexAccess",
                       "src": "1383:26:3",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_Record_$436_storage",
+                        "typeIdentifier": "t_struct$_Record_$487_storage",
                         "typeString": "struct Notarization.Record storage ref"
                       }
                     },
@@ -6478,11 +6478,11 @@
                     "rightHandSide": {
                       "arguments": [
                         {
-                          "id": 567,
+                          "id": 618,
                           "name": "hash",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 537,
+                          "referencedDeclaration": 588,
                           "src": "1419:4:3",
                           "typeDescriptions": {
                             "typeIdentifier": "t_bytes32",
@@ -6491,7 +6491,7 @@
                         },
                         {
                           "expression": {
-                            "id": 568,
+                            "id": 619,
                             "name": "block",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
@@ -6502,7 +6502,7 @@
                               "typeString": "block"
                             }
                           },
-                          "id": 569,
+                          "id": 620,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -6528,18 +6528,18 @@
                             "typeString": "uint256"
                           }
                         ],
-                        "id": 566,
+                        "id": 617,
                         "name": "Record",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 436,
+                        "referencedDeclaration": 487,
                         "src": "1412:6:3",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_type$_t_struct$_Record_$436_storage_ptr_$",
+                          "typeIdentifier": "t_type$_t_struct$_Record_$487_storage_ptr_$",
                           "typeString": "type(struct Notarization.Record storage pointer)"
                         }
                       },
-                      "id": 570,
+                      "id": 621,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -6551,17 +6551,17 @@
                       "src": "1412:29:3",
                       "tryCall": false,
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_Record_$436_memory_ptr",
+                        "typeIdentifier": "t_struct$_Record_$487_memory_ptr",
                         "typeString": "struct Notarization.Record memory"
                       }
                     },
                     "src": "1383:58:3",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_Record_$436_storage",
+                      "typeIdentifier": "t_struct$_Record_$487_storage",
                       "typeString": "struct Notarization.Record storage ref"
                     }
                   },
-                  "id": 572,
+                  "id": 623,
                   "nodeType": "ExpressionStatement",
                   "src": "1383:58:3"
                 },
@@ -6569,11 +6569,11 @@
                   "eventCall": {
                     "arguments": [
                       {
-                        "id": 574,
+                        "id": 625,
                         "name": "orderId",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 535,
+                        "referencedDeclaration": 586,
                         "src": "1474:7:3",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
@@ -6581,11 +6581,11 @@
                         }
                       },
                       {
-                        "id": 575,
+                        "id": 626,
                         "name": "hash",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 537,
+                        "referencedDeclaration": 588,
                         "src": "1483:4:3",
                         "typeDescriptions": {
                           "typeIdentifier": "t_bytes32",
@@ -6594,7 +6594,7 @@
                       },
                       {
                         "expression": {
-                          "id": 576,
+                          "id": 627,
                           "name": "block",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
@@ -6605,7 +6605,7 @@
                             "typeString": "block"
                           }
                         },
-                        "id": 577,
+                        "id": 628,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -6635,18 +6635,18 @@
                           "typeString": "uint256"
                         }
                       ],
-                      "id": 573,
+                      "id": 624,
                       "name": "PurchaseNotarized",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 462,
+                      "referencedDeclaration": 513,
                       "src": "1456:17:3",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_event_nonpayable$_t_uint256_$_t_bytes32_$_t_uint256_$returns$__$",
                         "typeString": "function (uint256,bytes32,uint256)"
                       }
                     },
-                    "id": 578,
+                    "id": 629,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -6662,25 +6662,25 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 579,
+                  "id": 630,
                   "nodeType": "EmitStatement",
                   "src": "1451:54:3"
                 }
               ]
             },
             "functionSelector": "d1923f3b",
-            "id": 581,
+            "id": 632,
             "implemented": true,
             "kind": "function",
             "modifiers": [
               {
                 "arguments": [
                   {
-                    "id": 540,
+                    "id": 591,
                     "name": "orderId",
                     "nodeType": "Identifier",
                     "overloadedDeclarations": [],
-                    "referencedDeclaration": 535,
+                    "referencedDeclaration": 586,
                     "src": "1230:7:3",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
@@ -6688,16 +6688,16 @@
                     }
                   }
                 ],
-                "id": 541,
+                "id": 592,
                 "kind": "modifierInvocation",
                 "modifierName": {
-                  "id": 539,
+                  "id": 590,
                   "name": "onlySellerOrBuyer",
                   "nameLocations": [
                     "1212:17:3"
                   ],
                   "nodeType": "IdentifierPath",
-                  "referencedDeclaration": 511,
+                  "referencedDeclaration": 562,
                   "src": "1212:17:3"
                 },
                 "nodeType": "ModifierInvocation",
@@ -6708,17 +6708,17 @@
             "nameLocation": "1155:16:3",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 538,
+              "id": 589,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 535,
+                  "id": 586,
                   "mutability": "mutable",
                   "name": "orderId",
                   "nameLocation": "1180:7:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 581,
+                  "scope": 632,
                   "src": "1172:15:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6727,7 +6727,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 534,
+                    "id": 585,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "1172:7:3",
@@ -6740,12 +6740,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 537,
+                  "id": 588,
                   "mutability": "mutable",
                   "name": "hash",
                   "nameLocation": "1197:4:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 581,
+                  "scope": 632,
                   "src": "1189:12:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -6754,7 +6754,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 536,
+                    "id": 587,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "1189:7:3",
@@ -6769,12 +6769,12 @@
               "src": "1171:31:3"
             },
             "returnParameters": {
-              "id": 542,
+              "id": 593,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "1239:0:3"
             },
-            "scope": 747,
+            "scope": 798,
             "src": "1146:366:3",
             "stateMutability": "nonpayable",
             "virtual": false,
@@ -6782,7 +6782,7 @@
           },
           {
             "body": {
-              "id": 628,
+              "id": 679,
               "nodeType": "Block",
               "src": "1611:273:3",
               "statements": [
@@ -6794,17 +6794,17 @@
                           "typeIdentifier": "t_bytes32",
                           "typeString": "bytes32"
                         },
-                        "id": 597,
+                        "id": 648,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
                         "lValueRequested": false,
                         "leftExpression": {
-                          "id": 592,
+                          "id": 643,
                           "name": "hash",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 585,
+                          "referencedDeclaration": 636,
                           "src": "1629:4:3",
                           "typeDescriptions": {
                             "typeIdentifier": "t_bytes32",
@@ -6817,7 +6817,7 @@
                           "arguments": [
                             {
                               "hexValue": "30",
-                              "id": 595,
+                              "id": 646,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": true,
@@ -6839,7 +6839,7 @@
                                 "typeString": "int_const 0"
                               }
                             ],
-                            "id": 594,
+                            "id": 645,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": true,
@@ -6851,14 +6851,14 @@
                               "typeString": "type(bytes32)"
                             },
                             "typeName": {
-                              "id": 593,
+                              "id": 644,
                               "name": "bytes32",
                               "nodeType": "ElementaryTypeName",
                               "src": "1637:7:3",
                               "typeDescriptions": {}
                             }
                           },
-                          "id": 596,
+                          "id": 647,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": true,
@@ -6882,7 +6882,7 @@
                       },
                       {
                         "hexValue": "496e76616c69642068617368",
-                        "id": 598,
+                        "id": 649,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -6908,7 +6908,7 @@
                           "typeString": "literal_string \"Invalid hash\""
                         }
                       ],
-                      "id": 591,
+                      "id": 642,
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
@@ -6922,7 +6922,7 @@
                         "typeString": "function (bool,string memory) pure"
                       }
                     },
-                    "id": 599,
+                    "id": 650,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -6938,7 +6938,7 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 600,
+                  "id": 651,
                   "nodeType": "ExpressionStatement",
                   "src": "1621:43:3"
                 },
@@ -6950,7 +6950,7 @@
                           "typeIdentifier": "t_uint256",
                           "typeString": "uint256"
                         },
-                        "id": 607,
+                        "id": 658,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -6958,24 +6958,24 @@
                         "leftExpression": {
                           "expression": {
                             "baseExpression": {
-                              "id": 602,
+                              "id": 653,
                               "name": "shipmentNotarized",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 449,
+                              "referencedDeclaration": 500,
                               "src": "1682:17:3",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$436_storage_$",
+                                "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$487_storage_$",
                                 "typeString": "mapping(uint256 => struct Notarization.Record storage ref)"
                               }
                             },
-                            "id": 604,
+                            "id": 655,
                             "indexExpression": {
-                              "id": 603,
+                              "id": 654,
                               "name": "orderId",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 583,
+                              "referencedDeclaration": 634,
                               "src": "1700:7:3",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_uint256",
@@ -6989,11 +6989,11 @@
                             "nodeType": "IndexAccess",
                             "src": "1682:26:3",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_struct$_Record_$436_storage",
+                              "typeIdentifier": "t_struct$_Record_$487_storage",
                               "typeString": "struct Notarization.Record storage ref"
                             }
                           },
-                          "id": 605,
+                          "id": 656,
                           "isConstant": false,
                           "isLValue": true,
                           "isPure": false,
@@ -7001,7 +7001,7 @@
                           "memberLocation": "1709:9:3",
                           "memberName": "timestamp",
                           "nodeType": "MemberAccess",
-                          "referencedDeclaration": 435,
+                          "referencedDeclaration": 486,
                           "src": "1682:36:3",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint256",
@@ -7012,7 +7012,7 @@
                         "operator": "==",
                         "rightExpression": {
                           "hexValue": "30",
-                          "id": 606,
+                          "id": 657,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": true,
@@ -7034,7 +7034,7 @@
                       },
                       {
                         "hexValue": "416c7265616479206e6f746172697a6564",
-                        "id": 608,
+                        "id": 659,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -7060,7 +7060,7 @@
                           "typeString": "literal_string \"Already notarized\""
                         }
                       ],
-                      "id": 601,
+                      "id": 652,
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
@@ -7074,7 +7074,7 @@
                         "typeString": "function (bool,string memory) pure"
                       }
                     },
-                    "id": 609,
+                    "id": 660,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -7090,37 +7090,37 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 610,
+                  "id": 661,
                   "nodeType": "ExpressionStatement",
                   "src": "1674:71:3"
                 },
                 {
                   "expression": {
-                    "id": 619,
+                    "id": 670,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
                       "baseExpression": {
-                        "id": 611,
+                        "id": 662,
                         "name": "shipmentNotarized",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 449,
+                        "referencedDeclaration": 500,
                         "src": "1755:17:3",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$436_storage_$",
+                          "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$487_storage_$",
                           "typeString": "mapping(uint256 => struct Notarization.Record storage ref)"
                         }
                       },
-                      "id": 613,
+                      "id": 664,
                       "indexExpression": {
-                        "id": 612,
+                        "id": 663,
                         "name": "orderId",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 583,
+                        "referencedDeclaration": 634,
                         "src": "1773:7:3",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
@@ -7134,7 +7134,7 @@
                       "nodeType": "IndexAccess",
                       "src": "1755:26:3",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_Record_$436_storage",
+                        "typeIdentifier": "t_struct$_Record_$487_storage",
                         "typeString": "struct Notarization.Record storage ref"
                       }
                     },
@@ -7143,11 +7143,11 @@
                     "rightHandSide": {
                       "arguments": [
                         {
-                          "id": 615,
+                          "id": 666,
                           "name": "hash",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 585,
+                          "referencedDeclaration": 636,
                           "src": "1791:4:3",
                           "typeDescriptions": {
                             "typeIdentifier": "t_bytes32",
@@ -7156,7 +7156,7 @@
                         },
                         {
                           "expression": {
-                            "id": 616,
+                            "id": 667,
                             "name": "block",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
@@ -7167,7 +7167,7 @@
                               "typeString": "block"
                             }
                           },
-                          "id": 617,
+                          "id": 668,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -7193,18 +7193,18 @@
                             "typeString": "uint256"
                           }
                         ],
-                        "id": 614,
+                        "id": 665,
                         "name": "Record",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 436,
+                        "referencedDeclaration": 487,
                         "src": "1784:6:3",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_type$_t_struct$_Record_$436_storage_ptr_$",
+                          "typeIdentifier": "t_type$_t_struct$_Record_$487_storage_ptr_$",
                           "typeString": "type(struct Notarization.Record storage pointer)"
                         }
                       },
-                      "id": 618,
+                      "id": 669,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -7216,17 +7216,17 @@
                       "src": "1784:29:3",
                       "tryCall": false,
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_Record_$436_memory_ptr",
+                        "typeIdentifier": "t_struct$_Record_$487_memory_ptr",
                         "typeString": "struct Notarization.Record memory"
                       }
                     },
                     "src": "1755:58:3",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_Record_$436_storage",
+                      "typeIdentifier": "t_struct$_Record_$487_storage",
                       "typeString": "struct Notarization.Record storage ref"
                     }
                   },
-                  "id": 620,
+                  "id": 671,
                   "nodeType": "ExpressionStatement",
                   "src": "1755:58:3"
                 },
@@ -7234,11 +7234,11 @@
                   "eventCall": {
                     "arguments": [
                       {
-                        "id": 622,
+                        "id": 673,
                         "name": "orderId",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 583,
+                        "referencedDeclaration": 634,
                         "src": "1846:7:3",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
@@ -7246,11 +7246,11 @@
                         }
                       },
                       {
-                        "id": 623,
+                        "id": 674,
                         "name": "hash",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 585,
+                        "referencedDeclaration": 636,
                         "src": "1855:4:3",
                         "typeDescriptions": {
                           "typeIdentifier": "t_bytes32",
@@ -7259,7 +7259,7 @@
                       },
                       {
                         "expression": {
-                          "id": 624,
+                          "id": 675,
                           "name": "block",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
@@ -7270,7 +7270,7 @@
                             "typeString": "block"
                           }
                         },
-                        "id": 625,
+                        "id": 676,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -7300,18 +7300,18 @@
                           "typeString": "uint256"
                         }
                       ],
-                      "id": 621,
+                      "id": 672,
                       "name": "ShipmentNotarized",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 470,
+                      "referencedDeclaration": 521,
                       "src": "1828:17:3",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_event_nonpayable$_t_uint256_$_t_bytes32_$_t_uint256_$returns$__$",
                         "typeString": "function (uint256,bytes32,uint256)"
                       }
                     },
-                    "id": 626,
+                    "id": 677,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -7327,25 +7327,25 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 627,
+                  "id": 678,
                   "nodeType": "EmitStatement",
                   "src": "1823:54:3"
                 }
               ]
             },
             "functionSelector": "2e557f88",
-            "id": 629,
+            "id": 680,
             "implemented": true,
             "kind": "function",
             "modifiers": [
               {
                 "arguments": [
                   {
-                    "id": 588,
+                    "id": 639,
                     "name": "orderId",
                     "nodeType": "Identifier",
                     "overloadedDeclarations": [],
-                    "referencedDeclaration": 583,
+                    "referencedDeclaration": 634,
                     "src": "1602:7:3",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
@@ -7353,16 +7353,16 @@
                     }
                   }
                 ],
-                "id": 589,
+                "id": 640,
                 "kind": "modifierInvocation",
                 "modifierName": {
-                  "id": 587,
+                  "id": 638,
                   "name": "onlySellerOrBuyer",
                   "nameLocations": [
                     "1584:17:3"
                   ],
                   "nodeType": "IdentifierPath",
-                  "referencedDeclaration": 511,
+                  "referencedDeclaration": 562,
                   "src": "1584:17:3"
                 },
                 "nodeType": "ModifierInvocation",
@@ -7373,17 +7373,17 @@
             "nameLocation": "1527:16:3",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 586,
+              "id": 637,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 583,
+                  "id": 634,
                   "mutability": "mutable",
                   "name": "orderId",
                   "nameLocation": "1552:7:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 629,
+                  "scope": 680,
                   "src": "1544:15:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -7392,7 +7392,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 582,
+                    "id": 633,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "1544:7:3",
@@ -7405,12 +7405,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 585,
+                  "id": 636,
                   "mutability": "mutable",
                   "name": "hash",
                   "nameLocation": "1569:4:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 629,
+                  "scope": 680,
                   "src": "1561:12:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -7419,7 +7419,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 584,
+                    "id": 635,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "1561:7:3",
@@ -7434,12 +7434,12 @@
               "src": "1543:31:3"
             },
             "returnParameters": {
-              "id": 590,
+              "id": 641,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "1611:0:3"
             },
-            "scope": 747,
+            "scope": 798,
             "src": "1518:366:3",
             "stateMutability": "nonpayable",
             "virtual": false,
@@ -7447,7 +7447,7 @@
           },
           {
             "body": {
-              "id": 676,
+              "id": 727,
               "nodeType": "Block",
               "src": "1983:273:3",
               "statements": [
@@ -7459,17 +7459,17 @@
                           "typeIdentifier": "t_bytes32",
                           "typeString": "bytes32"
                         },
-                        "id": 645,
+                        "id": 696,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
                         "lValueRequested": false,
                         "leftExpression": {
-                          "id": 640,
+                          "id": 691,
                           "name": "hash",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 633,
+                          "referencedDeclaration": 684,
                           "src": "2001:4:3",
                           "typeDescriptions": {
                             "typeIdentifier": "t_bytes32",
@@ -7482,7 +7482,7 @@
                           "arguments": [
                             {
                               "hexValue": "30",
-                              "id": 643,
+                              "id": 694,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": true,
@@ -7504,7 +7504,7 @@
                                 "typeString": "int_const 0"
                               }
                             ],
-                            "id": 642,
+                            "id": 693,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": true,
@@ -7516,14 +7516,14 @@
                               "typeString": "type(bytes32)"
                             },
                             "typeName": {
-                              "id": 641,
+                              "id": 692,
                               "name": "bytes32",
                               "nodeType": "ElementaryTypeName",
                               "src": "2009:7:3",
                               "typeDescriptions": {}
                             }
                           },
-                          "id": 644,
+                          "id": 695,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": true,
@@ -7547,7 +7547,7 @@
                       },
                       {
                         "hexValue": "496e76616c69642068617368",
-                        "id": 646,
+                        "id": 697,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -7573,7 +7573,7 @@
                           "typeString": "literal_string \"Invalid hash\""
                         }
                       ],
-                      "id": 639,
+                      "id": 690,
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
@@ -7587,7 +7587,7 @@
                         "typeString": "function (bool,string memory) pure"
                       }
                     },
-                    "id": 647,
+                    "id": 698,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -7603,7 +7603,7 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 648,
+                  "id": 699,
                   "nodeType": "ExpressionStatement",
                   "src": "1993:43:3"
                 },
@@ -7615,7 +7615,7 @@
                           "typeIdentifier": "t_uint256",
                           "typeString": "uint256"
                         },
-                        "id": 655,
+                        "id": 706,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -7623,24 +7623,24 @@
                         "leftExpression": {
                           "expression": {
                             "baseExpression": {
-                              "id": 650,
+                              "id": 701,
                               "name": "deliveryNotarized",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 454,
+                              "referencedDeclaration": 505,
                               "src": "2054:17:3",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$436_storage_$",
+                                "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$487_storage_$",
                                 "typeString": "mapping(uint256 => struct Notarization.Record storage ref)"
                               }
                             },
-                            "id": 652,
+                            "id": 703,
                             "indexExpression": {
-                              "id": 651,
+                              "id": 702,
                               "name": "orderId",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 631,
+                              "referencedDeclaration": 682,
                               "src": "2072:7:3",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_uint256",
@@ -7654,11 +7654,11 @@
                             "nodeType": "IndexAccess",
                             "src": "2054:26:3",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_struct$_Record_$436_storage",
+                              "typeIdentifier": "t_struct$_Record_$487_storage",
                               "typeString": "struct Notarization.Record storage ref"
                             }
                           },
-                          "id": 653,
+                          "id": 704,
                           "isConstant": false,
                           "isLValue": true,
                           "isPure": false,
@@ -7666,7 +7666,7 @@
                           "memberLocation": "2081:9:3",
                           "memberName": "timestamp",
                           "nodeType": "MemberAccess",
-                          "referencedDeclaration": 435,
+                          "referencedDeclaration": 486,
                           "src": "2054:36:3",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint256",
@@ -7677,7 +7677,7 @@
                         "operator": "==",
                         "rightExpression": {
                           "hexValue": "30",
-                          "id": 654,
+                          "id": 705,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": true,
@@ -7699,7 +7699,7 @@
                       },
                       {
                         "hexValue": "416c7265616479206e6f746172697a6564",
-                        "id": 656,
+                        "id": 707,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -7725,7 +7725,7 @@
                           "typeString": "literal_string \"Already notarized\""
                         }
                       ],
-                      "id": 649,
+                      "id": 700,
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
@@ -7739,7 +7739,7 @@
                         "typeString": "function (bool,string memory) pure"
                       }
                     },
-                    "id": 657,
+                    "id": 708,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -7755,37 +7755,37 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 658,
+                  "id": 709,
                   "nodeType": "ExpressionStatement",
                   "src": "2046:71:3"
                 },
                 {
                   "expression": {
-                    "id": 667,
+                    "id": 718,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
                       "baseExpression": {
-                        "id": 659,
+                        "id": 710,
                         "name": "deliveryNotarized",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 454,
+                        "referencedDeclaration": 505,
                         "src": "2127:17:3",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$436_storage_$",
+                          "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$487_storage_$",
                           "typeString": "mapping(uint256 => struct Notarization.Record storage ref)"
                         }
                       },
-                      "id": 661,
+                      "id": 712,
                       "indexExpression": {
-                        "id": 660,
+                        "id": 711,
                         "name": "orderId",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 631,
+                        "referencedDeclaration": 682,
                         "src": "2145:7:3",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
@@ -7799,7 +7799,7 @@
                       "nodeType": "IndexAccess",
                       "src": "2127:26:3",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_Record_$436_storage",
+                        "typeIdentifier": "t_struct$_Record_$487_storage",
                         "typeString": "struct Notarization.Record storage ref"
                       }
                     },
@@ -7808,11 +7808,11 @@
                     "rightHandSide": {
                       "arguments": [
                         {
-                          "id": 663,
+                          "id": 714,
                           "name": "hash",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 633,
+                          "referencedDeclaration": 684,
                           "src": "2163:4:3",
                           "typeDescriptions": {
                             "typeIdentifier": "t_bytes32",
@@ -7821,7 +7821,7 @@
                         },
                         {
                           "expression": {
-                            "id": 664,
+                            "id": 715,
                             "name": "block",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
@@ -7832,7 +7832,7 @@
                               "typeString": "block"
                             }
                           },
-                          "id": 665,
+                          "id": 716,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -7858,18 +7858,18 @@
                             "typeString": "uint256"
                           }
                         ],
-                        "id": 662,
+                        "id": 713,
                         "name": "Record",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 436,
+                        "referencedDeclaration": 487,
                         "src": "2156:6:3",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_type$_t_struct$_Record_$436_storage_ptr_$",
+                          "typeIdentifier": "t_type$_t_struct$_Record_$487_storage_ptr_$",
                           "typeString": "type(struct Notarization.Record storage pointer)"
                         }
                       },
-                      "id": 666,
+                      "id": 717,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -7881,17 +7881,17 @@
                       "src": "2156:29:3",
                       "tryCall": false,
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_Record_$436_memory_ptr",
+                        "typeIdentifier": "t_struct$_Record_$487_memory_ptr",
                         "typeString": "struct Notarization.Record memory"
                       }
                     },
                     "src": "2127:58:3",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_Record_$436_storage",
+                      "typeIdentifier": "t_struct$_Record_$487_storage",
                       "typeString": "struct Notarization.Record storage ref"
                     }
                   },
-                  "id": 668,
+                  "id": 719,
                   "nodeType": "ExpressionStatement",
                   "src": "2127:58:3"
                 },
@@ -7899,11 +7899,11 @@
                   "eventCall": {
                     "arguments": [
                       {
-                        "id": 670,
+                        "id": 721,
                         "name": "orderId",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 631,
+                        "referencedDeclaration": 682,
                         "src": "2218:7:3",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
@@ -7911,11 +7911,11 @@
                         }
                       },
                       {
-                        "id": 671,
+                        "id": 722,
                         "name": "hash",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 633,
+                        "referencedDeclaration": 684,
                         "src": "2227:4:3",
                         "typeDescriptions": {
                           "typeIdentifier": "t_bytes32",
@@ -7924,7 +7924,7 @@
                       },
                       {
                         "expression": {
-                          "id": 672,
+                          "id": 723,
                           "name": "block",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
@@ -7935,7 +7935,7 @@
                             "typeString": "block"
                           }
                         },
-                        "id": 673,
+                        "id": 724,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -7965,18 +7965,18 @@
                           "typeString": "uint256"
                         }
                       ],
-                      "id": 669,
+                      "id": 720,
                       "name": "DeliveryNotarized",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 478,
+                      "referencedDeclaration": 529,
                       "src": "2200:17:3",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_event_nonpayable$_t_uint256_$_t_bytes32_$_t_uint256_$returns$__$",
                         "typeString": "function (uint256,bytes32,uint256)"
                       }
                     },
-                    "id": 674,
+                    "id": 725,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -7992,25 +7992,25 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 675,
+                  "id": 726,
                   "nodeType": "EmitStatement",
                   "src": "2195:54:3"
                 }
               ]
             },
             "functionSelector": "d07a623d",
-            "id": 677,
+            "id": 728,
             "implemented": true,
             "kind": "function",
             "modifiers": [
               {
                 "arguments": [
                   {
-                    "id": 636,
+                    "id": 687,
                     "name": "orderId",
                     "nodeType": "Identifier",
                     "overloadedDeclarations": [],
-                    "referencedDeclaration": 631,
+                    "referencedDeclaration": 682,
                     "src": "1974:7:3",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
@@ -8018,16 +8018,16 @@
                     }
                   }
                 ],
-                "id": 637,
+                "id": 688,
                 "kind": "modifierInvocation",
                 "modifierName": {
-                  "id": 635,
+                  "id": 686,
                   "name": "onlySellerOrBuyer",
                   "nameLocations": [
                     "1956:17:3"
                   ],
                   "nodeType": "IdentifierPath",
-                  "referencedDeclaration": 511,
+                  "referencedDeclaration": 562,
                   "src": "1956:17:3"
                 },
                 "nodeType": "ModifierInvocation",
@@ -8038,17 +8038,17 @@
             "nameLocation": "1899:16:3",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 634,
+              "id": 685,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 631,
+                  "id": 682,
                   "mutability": "mutable",
                   "name": "orderId",
                   "nameLocation": "1924:7:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 677,
+                  "scope": 728,
                   "src": "1916:15:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8057,7 +8057,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 630,
+                    "id": 681,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "1916:7:3",
@@ -8070,12 +8070,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 633,
+                  "id": 684,
                   "mutability": "mutable",
                   "name": "hash",
                   "nameLocation": "1941:4:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 677,
+                  "scope": 728,
                   "src": "1933:12:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8084,7 +8084,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 632,
+                    "id": 683,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "1933:7:3",
@@ -8099,12 +8099,12 @@
               "src": "1915:31:3"
             },
             "returnParameters": {
-              "id": 638,
+              "id": 689,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "1983:0:3"
             },
-            "scope": 747,
+            "scope": 798,
             "src": "1890:366:3",
             "stateMutability": "nonpayable",
             "virtual": false,
@@ -8112,74 +8112,74 @@
           },
           {
             "body": {
-              "id": 699,
+              "id": 750,
               "nodeType": "Block",
               "src": "2359:114:3",
               "statements": [
                 {
                   "assignments": [
-                    688
+                    739
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 688,
+                      "id": 739,
                       "mutability": "mutable",
                       "name": "record",
                       "nameLocation": "2383:6:3",
                       "nodeType": "VariableDeclaration",
-                      "scope": 699,
+                      "scope": 750,
                       "src": "2369:20:3",
                       "stateVariable": false,
                       "storageLocation": "memory",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_Record_$436_memory_ptr",
+                        "typeIdentifier": "t_struct$_Record_$487_memory_ptr",
                         "typeString": "struct Notarization.Record"
                       },
                       "typeName": {
-                        "id": 687,
+                        "id": 738,
                         "nodeType": "UserDefinedTypeName",
                         "pathNode": {
-                          "id": 686,
+                          "id": 737,
                           "name": "Record",
                           "nameLocations": [
                             "2369:6:3"
                           ],
                           "nodeType": "IdentifierPath",
-                          "referencedDeclaration": 436,
+                          "referencedDeclaration": 487,
                           "src": "2369:6:3"
                         },
-                        "referencedDeclaration": 436,
+                        "referencedDeclaration": 487,
                         "src": "2369:6:3",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_Record_$436_storage_ptr",
+                          "typeIdentifier": "t_struct$_Record_$487_storage_ptr",
                           "typeString": "struct Notarization.Record"
                         }
                       },
                       "visibility": "internal"
                     }
                   ],
-                  "id": 692,
+                  "id": 743,
                   "initialValue": {
                     "baseExpression": {
-                      "id": 689,
+                      "id": 740,
                       "name": "purchaseNotarized",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 444,
+                      "referencedDeclaration": 495,
                       "src": "2392:17:3",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$436_storage_$",
+                        "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$487_storage_$",
                         "typeString": "mapping(uint256 => struct Notarization.Record storage ref)"
                       }
                     },
-                    "id": 691,
+                    "id": 742,
                     "indexExpression": {
-                      "id": 690,
+                      "id": 741,
                       "name": "orderId",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 679,
+                      "referencedDeclaration": 730,
                       "src": "2410:7:3",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -8193,7 +8193,7 @@
                     "nodeType": "IndexAccess",
                     "src": "2392:26:3",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_Record_$436_storage",
+                      "typeIdentifier": "t_struct$_Record_$487_storage",
                       "typeString": "struct Notarization.Record storage ref"
                     }
                   },
@@ -8205,18 +8205,18 @@
                     "components": [
                       {
                         "expression": {
-                          "id": 693,
+                          "id": 744,
                           "name": "record",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 688,
+                          "referencedDeclaration": 739,
                           "src": "2436:6:3",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_struct$_Record_$436_memory_ptr",
+                            "typeIdentifier": "t_struct$_Record_$487_memory_ptr",
                             "typeString": "struct Notarization.Record memory"
                           }
                         },
-                        "id": 694,
+                        "id": 745,
                         "isConstant": false,
                         "isLValue": true,
                         "isPure": false,
@@ -8224,7 +8224,7 @@
                         "memberLocation": "2443:4:3",
                         "memberName": "hash",
                         "nodeType": "MemberAccess",
-                        "referencedDeclaration": 433,
+                        "referencedDeclaration": 484,
                         "src": "2436:11:3",
                         "typeDescriptions": {
                           "typeIdentifier": "t_bytes32",
@@ -8233,18 +8233,18 @@
                       },
                       {
                         "expression": {
-                          "id": 695,
+                          "id": 746,
                           "name": "record",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 688,
+                          "referencedDeclaration": 739,
                           "src": "2449:6:3",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_struct$_Record_$436_memory_ptr",
+                            "typeIdentifier": "t_struct$_Record_$487_memory_ptr",
                             "typeString": "struct Notarization.Record memory"
                           }
                         },
-                        "id": 696,
+                        "id": 747,
                         "isConstant": false,
                         "isLValue": true,
                         "isPure": false,
@@ -8252,7 +8252,7 @@
                         "memberLocation": "2456:9:3",
                         "memberName": "timestamp",
                         "nodeType": "MemberAccess",
-                        "referencedDeclaration": 435,
+                        "referencedDeclaration": 486,
                         "src": "2449:16:3",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
@@ -8260,7 +8260,7 @@
                         }
                       }
                     ],
-                    "id": 697,
+                    "id": 748,
                     "isConstant": false,
                     "isInlineArray": false,
                     "isLValue": false,
@@ -8273,15 +8273,15 @@
                       "typeString": "tuple(bytes32,uint256)"
                     }
                   },
-                  "functionReturnParameters": 685,
-                  "id": 698,
+                  "functionReturnParameters": 736,
+                  "id": 749,
                   "nodeType": "Return",
                   "src": "2428:38:3"
                 }
               ]
             },
             "functionSelector": "baca263e",
-            "id": 700,
+            "id": 751,
             "implemented": true,
             "kind": "function",
             "modifiers": [],
@@ -8289,17 +8289,17 @@
             "nameLocation": "2271:14:3",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 680,
+              "id": 731,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 679,
+                  "id": 730,
                   "mutability": "mutable",
                   "name": "orderId",
                   "nameLocation": "2294:7:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 700,
+                  "scope": 751,
                   "src": "2286:15:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8308,7 +8308,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 678,
+                    "id": 729,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "2286:7:3",
@@ -8323,17 +8323,17 @@
               "src": "2285:17:3"
             },
             "returnParameters": {
-              "id": 685,
+              "id": 736,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 682,
+                  "id": 733,
                   "mutability": "mutable",
                   "name": "hash",
                   "nameLocation": "2334:4:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 700,
+                  "scope": 751,
                   "src": "2326:12:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8342,7 +8342,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 681,
+                    "id": 732,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "2326:7:3",
@@ -8355,12 +8355,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 684,
+                  "id": 735,
                   "mutability": "mutable",
                   "name": "timestamp",
                   "nameLocation": "2348:9:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 700,
+                  "scope": 751,
                   "src": "2340:17:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8369,7 +8369,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 683,
+                    "id": 734,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "2340:7:3",
@@ -8383,7 +8383,7 @@
               ],
               "src": "2325:33:3"
             },
-            "scope": 747,
+            "scope": 798,
             "src": "2262:211:3",
             "stateMutability": "view",
             "virtual": false,
@@ -8391,74 +8391,74 @@
           },
           {
             "body": {
-              "id": 722,
+              "id": 773,
               "nodeType": "Block",
               "src": "2576:114:3",
               "statements": [
                 {
                   "assignments": [
-                    711
+                    762
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 711,
+                      "id": 762,
                       "mutability": "mutable",
                       "name": "record",
                       "nameLocation": "2600:6:3",
                       "nodeType": "VariableDeclaration",
-                      "scope": 722,
+                      "scope": 773,
                       "src": "2586:20:3",
                       "stateVariable": false,
                       "storageLocation": "memory",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_Record_$436_memory_ptr",
+                        "typeIdentifier": "t_struct$_Record_$487_memory_ptr",
                         "typeString": "struct Notarization.Record"
                       },
                       "typeName": {
-                        "id": 710,
+                        "id": 761,
                         "nodeType": "UserDefinedTypeName",
                         "pathNode": {
-                          "id": 709,
+                          "id": 760,
                           "name": "Record",
                           "nameLocations": [
                             "2586:6:3"
                           ],
                           "nodeType": "IdentifierPath",
-                          "referencedDeclaration": 436,
+                          "referencedDeclaration": 487,
                           "src": "2586:6:3"
                         },
-                        "referencedDeclaration": 436,
+                        "referencedDeclaration": 487,
                         "src": "2586:6:3",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_Record_$436_storage_ptr",
+                          "typeIdentifier": "t_struct$_Record_$487_storage_ptr",
                           "typeString": "struct Notarization.Record"
                         }
                       },
                       "visibility": "internal"
                     }
                   ],
-                  "id": 715,
+                  "id": 766,
                   "initialValue": {
                     "baseExpression": {
-                      "id": 712,
+                      "id": 763,
                       "name": "shipmentNotarized",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 449,
+                      "referencedDeclaration": 500,
                       "src": "2609:17:3",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$436_storage_$",
+                        "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$487_storage_$",
                         "typeString": "mapping(uint256 => struct Notarization.Record storage ref)"
                       }
                     },
-                    "id": 714,
+                    "id": 765,
                     "indexExpression": {
-                      "id": 713,
+                      "id": 764,
                       "name": "orderId",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 702,
+                      "referencedDeclaration": 753,
                       "src": "2627:7:3",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -8472,7 +8472,7 @@
                     "nodeType": "IndexAccess",
                     "src": "2609:26:3",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_Record_$436_storage",
+                      "typeIdentifier": "t_struct$_Record_$487_storage",
                       "typeString": "struct Notarization.Record storage ref"
                     }
                   },
@@ -8484,18 +8484,18 @@
                     "components": [
                       {
                         "expression": {
-                          "id": 716,
+                          "id": 767,
                           "name": "record",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 711,
+                          "referencedDeclaration": 762,
                           "src": "2653:6:3",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_struct$_Record_$436_memory_ptr",
+                            "typeIdentifier": "t_struct$_Record_$487_memory_ptr",
                             "typeString": "struct Notarization.Record memory"
                           }
                         },
-                        "id": 717,
+                        "id": 768,
                         "isConstant": false,
                         "isLValue": true,
                         "isPure": false,
@@ -8503,7 +8503,7 @@
                         "memberLocation": "2660:4:3",
                         "memberName": "hash",
                         "nodeType": "MemberAccess",
-                        "referencedDeclaration": 433,
+                        "referencedDeclaration": 484,
                         "src": "2653:11:3",
                         "typeDescriptions": {
                           "typeIdentifier": "t_bytes32",
@@ -8512,18 +8512,18 @@
                       },
                       {
                         "expression": {
-                          "id": 718,
+                          "id": 769,
                           "name": "record",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 711,
+                          "referencedDeclaration": 762,
                           "src": "2666:6:3",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_struct$_Record_$436_memory_ptr",
+                            "typeIdentifier": "t_struct$_Record_$487_memory_ptr",
                             "typeString": "struct Notarization.Record memory"
                           }
                         },
-                        "id": 719,
+                        "id": 770,
                         "isConstant": false,
                         "isLValue": true,
                         "isPure": false,
@@ -8531,7 +8531,7 @@
                         "memberLocation": "2673:9:3",
                         "memberName": "timestamp",
                         "nodeType": "MemberAccess",
-                        "referencedDeclaration": 435,
+                        "referencedDeclaration": 486,
                         "src": "2666:16:3",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
@@ -8539,7 +8539,7 @@
                         }
                       }
                     ],
-                    "id": 720,
+                    "id": 771,
                     "isConstant": false,
                     "isInlineArray": false,
                     "isLValue": false,
@@ -8552,15 +8552,15 @@
                       "typeString": "tuple(bytes32,uint256)"
                     }
                   },
-                  "functionReturnParameters": 708,
-                  "id": 721,
+                  "functionReturnParameters": 759,
+                  "id": 772,
                   "nodeType": "Return",
                   "src": "2645:38:3"
                 }
               ]
             },
             "functionSelector": "92d15fc4",
-            "id": 723,
+            "id": 774,
             "implemented": true,
             "kind": "function",
             "modifiers": [],
@@ -8568,17 +8568,17 @@
             "nameLocation": "2488:14:3",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 703,
+              "id": 754,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 702,
+                  "id": 753,
                   "mutability": "mutable",
                   "name": "orderId",
                   "nameLocation": "2511:7:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 723,
+                  "scope": 774,
                   "src": "2503:15:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8587,7 +8587,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 701,
+                    "id": 752,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "2503:7:3",
@@ -8602,17 +8602,17 @@
               "src": "2502:17:3"
             },
             "returnParameters": {
-              "id": 708,
+              "id": 759,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 705,
+                  "id": 756,
                   "mutability": "mutable",
                   "name": "hash",
                   "nameLocation": "2551:4:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 723,
+                  "scope": 774,
                   "src": "2543:12:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8621,7 +8621,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 704,
+                    "id": 755,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "2543:7:3",
@@ -8634,12 +8634,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 707,
+                  "id": 758,
                   "mutability": "mutable",
                   "name": "timestamp",
                   "nameLocation": "2565:9:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 723,
+                  "scope": 774,
                   "src": "2557:17:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8648,7 +8648,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 706,
+                    "id": 757,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "2557:7:3",
@@ -8662,7 +8662,7 @@
               ],
               "src": "2542:33:3"
             },
-            "scope": 747,
+            "scope": 798,
             "src": "2479:211:3",
             "stateMutability": "view",
             "virtual": false,
@@ -8670,74 +8670,74 @@
           },
           {
             "body": {
-              "id": 745,
+              "id": 796,
               "nodeType": "Block",
               "src": "2793:114:3",
               "statements": [
                 {
                   "assignments": [
-                    734
+                    785
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 734,
+                      "id": 785,
                       "mutability": "mutable",
                       "name": "record",
                       "nameLocation": "2817:6:3",
                       "nodeType": "VariableDeclaration",
-                      "scope": 745,
+                      "scope": 796,
                       "src": "2803:20:3",
                       "stateVariable": false,
                       "storageLocation": "memory",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_struct$_Record_$436_memory_ptr",
+                        "typeIdentifier": "t_struct$_Record_$487_memory_ptr",
                         "typeString": "struct Notarization.Record"
                       },
                       "typeName": {
-                        "id": 733,
+                        "id": 784,
                         "nodeType": "UserDefinedTypeName",
                         "pathNode": {
-                          "id": 732,
+                          "id": 783,
                           "name": "Record",
                           "nameLocations": [
                             "2803:6:3"
                           ],
                           "nodeType": "IdentifierPath",
-                          "referencedDeclaration": 436,
+                          "referencedDeclaration": 487,
                           "src": "2803:6:3"
                         },
-                        "referencedDeclaration": 436,
+                        "referencedDeclaration": 487,
                         "src": "2803:6:3",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_Record_$436_storage_ptr",
+                          "typeIdentifier": "t_struct$_Record_$487_storage_ptr",
                           "typeString": "struct Notarization.Record"
                         }
                       },
                       "visibility": "internal"
                     }
                   ],
-                  "id": 738,
+                  "id": 789,
                   "initialValue": {
                     "baseExpression": {
-                      "id": 735,
+                      "id": 786,
                       "name": "deliveryNotarized",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 454,
+                      "referencedDeclaration": 505,
                       "src": "2826:17:3",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$436_storage_$",
+                        "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Record_$487_storage_$",
                         "typeString": "mapping(uint256 => struct Notarization.Record storage ref)"
                       }
                     },
-                    "id": 737,
+                    "id": 788,
                     "indexExpression": {
-                      "id": 736,
+                      "id": 787,
                       "name": "orderId",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 725,
+                      "referencedDeclaration": 776,
                       "src": "2844:7:3",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -8751,7 +8751,7 @@
                     "nodeType": "IndexAccess",
                     "src": "2826:26:3",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_Record_$436_storage",
+                      "typeIdentifier": "t_struct$_Record_$487_storage",
                       "typeString": "struct Notarization.Record storage ref"
                     }
                   },
@@ -8763,18 +8763,18 @@
                     "components": [
                       {
                         "expression": {
-                          "id": 739,
+                          "id": 790,
                           "name": "record",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 734,
+                          "referencedDeclaration": 785,
                           "src": "2870:6:3",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_struct$_Record_$436_memory_ptr",
+                            "typeIdentifier": "t_struct$_Record_$487_memory_ptr",
                             "typeString": "struct Notarization.Record memory"
                           }
                         },
-                        "id": 740,
+                        "id": 791,
                         "isConstant": false,
                         "isLValue": true,
                         "isPure": false,
@@ -8782,7 +8782,7 @@
                         "memberLocation": "2877:4:3",
                         "memberName": "hash",
                         "nodeType": "MemberAccess",
-                        "referencedDeclaration": 433,
+                        "referencedDeclaration": 484,
                         "src": "2870:11:3",
                         "typeDescriptions": {
                           "typeIdentifier": "t_bytes32",
@@ -8791,18 +8791,18 @@
                       },
                       {
                         "expression": {
-                          "id": 741,
+                          "id": 792,
                           "name": "record",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 734,
+                          "referencedDeclaration": 785,
                           "src": "2883:6:3",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_struct$_Record_$436_memory_ptr",
+                            "typeIdentifier": "t_struct$_Record_$487_memory_ptr",
                             "typeString": "struct Notarization.Record memory"
                           }
                         },
-                        "id": 742,
+                        "id": 793,
                         "isConstant": false,
                         "isLValue": true,
                         "isPure": false,
@@ -8810,7 +8810,7 @@
                         "memberLocation": "2890:9:3",
                         "memberName": "timestamp",
                         "nodeType": "MemberAccess",
-                        "referencedDeclaration": 435,
+                        "referencedDeclaration": 486,
                         "src": "2883:16:3",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
@@ -8818,7 +8818,7 @@
                         }
                       }
                     ],
-                    "id": 743,
+                    "id": 794,
                     "isConstant": false,
                     "isInlineArray": false,
                     "isLValue": false,
@@ -8831,15 +8831,15 @@
                       "typeString": "tuple(bytes32,uint256)"
                     }
                   },
-                  "functionReturnParameters": 731,
-                  "id": 744,
+                  "functionReturnParameters": 782,
+                  "id": 795,
                   "nodeType": "Return",
                   "src": "2862:38:3"
                 }
               ]
             },
             "functionSelector": "23675c47",
-            "id": 746,
+            "id": 797,
             "implemented": true,
             "kind": "function",
             "modifiers": [],
@@ -8847,17 +8847,17 @@
             "nameLocation": "2705:14:3",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 726,
+              "id": 777,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 725,
+                  "id": 776,
                   "mutability": "mutable",
                   "name": "orderId",
                   "nameLocation": "2728:7:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 746,
+                  "scope": 797,
                   "src": "2720:15:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8866,7 +8866,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 724,
+                    "id": 775,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "2720:7:3",
@@ -8881,17 +8881,17 @@
               "src": "2719:17:3"
             },
             "returnParameters": {
-              "id": 731,
+              "id": 782,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 728,
+                  "id": 779,
                   "mutability": "mutable",
                   "name": "hash",
                   "nameLocation": "2768:4:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 746,
+                  "scope": 797,
                   "src": "2760:12:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8900,7 +8900,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 727,
+                    "id": 778,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "2760:7:3",
@@ -8913,12 +8913,12 @@
                 },
                 {
                   "constant": false,
-                  "id": 730,
+                  "id": 781,
                   "mutability": "mutable",
                   "name": "timestamp",
                   "nameLocation": "2782:9:3",
                   "nodeType": "VariableDeclaration",
-                  "scope": 746,
+                  "scope": 797,
                   "src": "2774:17:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -8927,7 +8927,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 729,
+                    "id": 780,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "2774:7:3",
@@ -8941,14 +8941,14 @@
               ],
               "src": "2759:33:3"
             },
-            "scope": 747,
+            "scope": 798,
             "src": "2696:211:3",
             "stateMutability": "view",
             "virtual": false,
             "visibility": "external"
           }
         ],
-        "scope": 748,
+        "scope": 799,
         "src": "89:2820:3",
         "usedErrors": []
       }
@@ -8963,12 +8963,12 @@
     "5777": {
       "events": {},
       "links": {},
-      "address": "0xD47f3Bd978eCCa587DaEB398617C3B6E39EB2b26",
-      "transactionHash": "0x1a8f3f38ca8a44721b430379984463dd6c83731cee400d48bb55f52006090fa9"
+      "address": "0xFF2634F02EaEd576B4D5834789d60a59Fb5Fa719",
+      "transactionHash": "0xd41f6456a47b69038d3e9333e8b47d706c9ea7a47beb36779fc1fa15130f6769"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2026-01-29T06:14:57.646Z",
+  "updatedAt": "2026-01-29T09:10:05.291Z",
   "networkType": "ethereum",
   "devdoc": {
     "kind": "dev",

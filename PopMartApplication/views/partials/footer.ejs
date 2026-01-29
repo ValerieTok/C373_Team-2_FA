@@ -42,6 +42,19 @@
         seller: "popmartSellerWallet",
         buyer: "popmartBuyerWallet",
       };
+      const txLocks = {};
+
+      function withTxLock(key, fn) {
+        if (txLocks[key]) {
+          return Promise.reject(new Error("Transaction already pending."));
+        }
+        txLocks[key] = true;
+        return Promise.resolve()
+          .then(fn)
+          .finally(function () {
+            txLocks[key] = false;
+          });
+      }
 
       function isSellerPage() {
         return Boolean(sellerPageRoot);
@@ -546,17 +559,19 @@
         if (!name || !email || !phone) {
           throw new Error("Provide name, email, and phone.");
         }
-        await requestAccountSelection();
-        if (state.verification.seller) return state.verification;
-        state.verification = { ...state.verification, seller: true };
-        setSellerLockUI(true);
-        if (sellerVerificationStatus) {
-          sellerVerificationStatus.textContent = "Wallet connected for " + state.account;
-        }
-        if (sellerVerifiedSummaryText) {
-          sellerVerifiedSummaryText.textContent = "Wallet connected for " + state.account;
-        }
-        return state.verification;
+        return withTxLock("verify-seller", async function () {
+          await requestAccountSelection();
+          if (state.verification.seller) return state.verification;
+          state.verification = { ...state.verification, seller: true };
+          setSellerLockUI(true);
+          if (sellerVerificationStatus) {
+            sellerVerificationStatus.textContent = "Wallet connected for " + state.account;
+          }
+          if (sellerVerifiedSummaryText) {
+            sellerVerifiedSummaryText.textContent = "Wallet connected for " + state.account;
+          }
+          return state.verification;
+        });
       }
 
       async function ensureBuyerVerification(info) {
@@ -601,63 +616,57 @@
         const network = await state.provider.getNetwork();
         const chainId = network.chainId;
 
-        for (const item of cart) {
-          if (!item.sellerWallet || !window.ethers.utils.isAddress(item.sellerWallet)) {
-            throw new Error(
-              "Missing or invalid seller wallet for " + item.name + ". Ask the seller to reconnect."
+        await withTxLock("checkout", async function () {
+          for (const item of cart) {
+            if (!item.sellerWallet || !window.ethers.utils.isAddress(item.sellerWallet)) {
+              throw new Error(
+                "Missing or invalid seller wallet for " + item.name + ". Ask the seller to reconnect."
+              );
+            }
+            const qty = Number(item.qty || 0);
+            const listingId = Number(item.productId || 0);
+            const itemPriceWei = window.ethers.utils.parseEther(String(item.priceEth || 0));
+            const priceWei = await state.listingContract.getPrice(listingId);
+            let expectedOrderId = null;
+            let tx = null;
+            if (priceWei && !priceWei.eq(0) && priceWei.eq(itemPriceWei)) {
+              const totalWei = priceWei.mul(window.ethers.BigNumber.from(qty));
+              expectedOrderId = await state.escrowContract.callStatic.pay(
+                listingId,
+                qty,
+                { value: totalWei }
+              );
+              tx = await state.escrowContract.pay(listingId, qty, { value: totalWei });
+            } else {
+              expectedOrderId = await state.orderRegistry.callStatic.createOrder(
+                listingId,
+                state.account,
+                item.sellerWallet,
+                qty
+              );
+              tx = await state.orderRegistry.createOrder(
+                listingId,
+                state.account,
+                item.sellerWallet,
+                qty
+              );
+            }
+            const receipt = await tx.wait();
+            const orderHash = window.ethers.utils.solidityKeccak256(
+              ["address", "address", "uint256", "uint256", "uint256", "uint256", "uint256"],
+              [state.account, item.sellerWallet, listingId, qty, itemPriceWei, expectedOrderId, chainId]
             );
+            chainOrders.push({
+              orderId: String(expectedOrderId),
+              txHash: receipt.transactionHash,
+            });
+            orderReceipts.push({
+              orderHash: orderHash,
+              escrowOrderId: String(expectedOrderId),
+              notarizeTxHash: "",
+            });
           }
-          const qty = Number(item.qty || 0);
-          const listingId = Number(item.productId || 0);
-          const itemPriceWei = window.ethers.utils.parseEther(String(item.priceEth || 0));
-          const priceWei = await state.listingContract.getPrice(listingId);
-          let expectedOrderId = null;
-          let tx = null;
-          if (priceWei && !priceWei.eq(0) && priceWei.eq(itemPriceWei)) {
-            const totalWei = priceWei.mul(window.ethers.BigNumber.from(qty));
-            expectedOrderId = await state.escrowContract.callStatic.pay(
-              listingId,
-              qty,
-              { value: totalWei }
-            );
-            tx = await state.escrowContract.pay(listingId, qty, { value: totalWei });
-          } else {
-            expectedOrderId = await state.orderRegistry.callStatic.createOrder(
-              listingId,
-              state.account,
-              item.sellerWallet,
-              qty
-            );
-            tx = await state.orderRegistry.createOrder(
-              listingId,
-              state.account,
-              item.sellerWallet,
-              qty
-            );
-          }
-          const receipt = await tx.wait();
-          const orderHash = window.ethers.utils.solidityKeccak256(
-            ["address", "address", "uint256", "uint256", "uint256", "uint256", "uint256"],
-            [state.account, item.sellerWallet, listingId, qty, itemPriceWei, expectedOrderId, chainId]
-          );
-          let notarizeReceipt = null;
-          if (state.notarizationContract) {
-            const notarizeTx = await state.notarizationContract.notarizePurchase(
-              expectedOrderId,
-              orderHash
-            );
-            notarizeReceipt = await notarizeTx.wait();
-          }
-          chainOrders.push({
-            orderId: String(expectedOrderId),
-            txHash: receipt.transactionHash,
-          });
-          orderReceipts.push({
-            orderHash: orderHash,
-            escrowOrderId: String(expectedOrderId),
-            notarizeTxHash: notarizeReceipt ? notarizeReceipt.transactionHash : "",
-          });
-        }
+        });
 
         const response = await fetch(form.action, {
           method: "POST",
@@ -701,46 +710,57 @@
             throw new Error("Seller not verified. Verify with MetaMask first.");
           }
         }
-        if (action === "ship") {
-          try {
-            const delivery = await state.deliveryTracking.deliveries(escrowOrderId);
-            const status = Number(delivery && delivery.status != null ? delivery.status : 0);
-            if (status < 1) {
-              await (await state.deliveryTracking.markShipped(escrowOrderId, "")).wait();
+        const lockKey = "escrow-" + action + "-" + escrowOrderId;
+        await withTxLock(lockKey, async function () {
+          if (action === "ship") {
+            try {
+              const delivery = await state.deliveryTracking.deliveries(escrowOrderId);
+              let status = Number(delivery && delivery.status != null ? delivery.status : 0);
+              if (status < 1) {
+                await (await state.deliveryTracking.markShipped(escrowOrderId, "")).wait();
+                status = 1;
+              }
+              if (status < 2) {
+                await (await state.deliveryTracking.markInTransit(escrowOrderId)).wait();
+                status = 2;
+              }
+              if (status < 3) {
+                await (await state.deliveryTracking.markDelivered(escrowOrderId)).wait();
+                status = 3;
+              }
+            } catch (err) {
+              const reason = normalizeRpcError(err);
+              throw new Error(reason || "Shipment update failed.");
             }
-            if (status < 2) {
-              await (await state.deliveryTracking.markInTransit(escrowOrderId)).wait();
+          } else if (action === "deliver") {
+            try {
+              const delivery = await state.deliveryTracking.deliveries(escrowOrderId);
+              const status = Number(delivery && delivery.status != null ? delivery.status : 0);
+              if (status < 3) {
+                throw new Error("Seller must mark delivery before buyer confirmation.");
+              }
+              await (await state.deliveryTracking.confirmDelivery(escrowOrderId)).wait();
+              if (state.escrowContract) {
+                await (await state.escrowContract.release(escrowOrderId)).wait();
+              }
+            } catch (err) {
+              const reason = normalizeRpcError(err);
+              throw new Error(reason || "Delivery confirmation failed.");
             }
-            if (status < 3) {
-              await (await state.deliveryTracking.markDelivered(escrowOrderId)).wait();
+          } else if (action === "rate") {
+            const stars = Number(form.querySelector("[name=stars]").value || 5);
+            const comment = form.querySelector("[name=comment]").value || "";
+            try {
+              if (!state.sellerReputation) {
+                throw new Error("Seller reputation contract not deployed.");
+              }
+              await (await state.sellerReputation.rateOrder(escrowOrderId, stars)).wait();
+            } catch (err) {
+              const reason = normalizeRpcError(err);
+              throw new Error(reason || "Rating submission failed.");
             }
-          } catch (err) {
-            const reason = normalizeRpcError(err);
-            throw new Error(reason || "Shipment confirmation failed.");
           }
-        } else if (action === "deliver") {
-          try {
-            await (await state.deliveryTracking.confirmDelivery(escrowOrderId)).wait();
-            if (state.escrowContract) {
-              await (await state.escrowContract.release(escrowOrderId)).wait();
-            }
-          } catch (err) {
-            const reason = normalizeRpcError(err);
-            throw new Error(reason || "Delivery confirmation failed.");
-          }
-        } else if (action === "rate") {
-          const stars = Number(form.querySelector("[name=stars]").value || 5);
-          const comment = form.querySelector("[name=comment]").value || "";
-          try {
-            if (!state.sellerReputation) {
-              throw new Error("Seller reputation contract not deployed.");
-            }
-            await (await state.sellerReputation.rateOrder(escrowOrderId, stars)).wait();
-          } catch (err) {
-            const reason = normalizeRpcError(err);
-            throw new Error(reason || "Rating submission failed.");
-          }
-        }
+        });
 
         const payload =
           action === "rate"
@@ -913,62 +933,76 @@
             }
             if (statusEl) statusEl.textContent = "Verifying...";
             if (timeEl) timeEl.textContent = "";
-            connectWallet()
-              .then(function () { return ensureNotarizationReady(); })
-              .then(function () {
-                if (payload.type === "purchase") {
-                  return state.notarizationContract.verifyPurchase(payload.orderId);
-                }
-                if (payload.type === "shipment") {
-                  return state.notarizationContract.verifyShipment(payload.orderId);
-                }
-                return state.notarizationContract.verifyDelivery(payload.orderId);
-              })
-              .then(function (result) {
-                const timestamp = result && result.timestamp ? result.timestamp : result[1];
-                if (timestamp && Number(timestamp) > 0) {
-                  if (statusEl) statusEl.textContent = "Verified on-chain.";
-                  if (timeEl) timeEl.textContent = "Notarized: " + formatTimestampFromSeconds(timestamp);
-                  if (proofForm) {
-                    const submitBtn = proofForm.querySelector("button[type=submit]");
-                    if (submitBtn) submitBtn.disabled = false;
+            withTxLock("receipt-verify-" + payload.type + "-" + payload.orderId, function () {
+              return connectWallet()
+                .then(function () { return ensureNotarizationReady(); })
+                .then(function () {
+                  if (payload.type === "purchase") {
+                    return state.notarizationContract.verifyPurchase(payload.orderId);
                   }
-                  return null;
-                }
-                const canNotarize = String(btn.dataset.canNotarize || "") === "true";
-                if (!canNotarize) {
-                  if (statusEl) statusEl.textContent = "Not notarized yet.";
-                  return null;
-                }
-                const receiptHash = buildReceiptHash(payload);
-                if (statusEl) statusEl.textContent = "Notarizing...";
-                if (payload.type === "purchase") {
-                  return state.notarizationContract.notarizePurchase(payload.orderId, receiptHash);
-                }
-                if (payload.type === "shipment") {
-                  return state.notarizationContract.notarizeShipment(payload.orderId, receiptHash);
-                }
-                return state.notarizationContract.notarizeDelivery(payload.orderId, receiptHash);
-              })
-              .then(function (tx) {
-                if (!tx) return null;
-                return tx.wait();
-              })
-              .then(function (result) {
-                if (!result) return;
-                const timestamp = result && result.timestamp ? result.timestamp : result[1];
-                if (timestamp && Number(timestamp) > 0) {
-                  if (statusEl) statusEl.textContent = "Verified on-chain.";
-                  if (timeEl) timeEl.textContent = "Notarized: " + formatTimestampFromSeconds(timestamp);
-                  if (proofForm) {
-                    const submitBtn = proofForm.querySelector("button[type=submit]");
-                    if (submitBtn) submitBtn.disabled = false;
+                  if (payload.type === "shipment") {
+                    return state.notarizationContract.verifyShipment(payload.orderId);
                   }
-                }
-              })
-              .catch(function (err) {
-                if (statusEl) statusEl.textContent = err.message || "Verification failed.";
-              });
+                  return state.notarizationContract.verifyDelivery(payload.orderId);
+                })
+                .then(function (result) {
+                  const timestamp = result && result.timestamp ? result.timestamp : result[1];
+                  if (timestamp && Number(timestamp) > 0) {
+                    if (statusEl) statusEl.textContent = "Verified on-chain.";
+                    if (timeEl) timeEl.textContent = "Notarized: " + formatTimestampFromSeconds(timestamp);
+                    if (proofForm) {
+                      const submitBtn = proofForm.querySelector("button[type=submit]");
+                      if (submitBtn) submitBtn.disabled = false;
+                    }
+                    return null;
+                  }
+                  const canNotarize = String(btn.dataset.canNotarize || "") === "true";
+                  if (!canNotarize) {
+                    if (statusEl) statusEl.textContent = "Not notarized yet.";
+                    return null;
+                  }
+                  const receiptHash = buildReceiptHash(payload);
+                  if (statusEl) statusEl.textContent = "Notarizing...";
+                  if (payload.type === "purchase") {
+                    return state.notarizationContract.notarizePurchase(payload.orderId, receiptHash);
+                  }
+                  if (payload.type === "shipment") {
+                    return state.notarizationContract.notarizeShipment(payload.orderId, receiptHash);
+                  }
+                  return state.notarizationContract.notarizeDelivery(payload.orderId, receiptHash);
+                })
+                .then(function (tx) {
+                  if (!tx) return null;
+                  return tx.wait();
+                })
+                .then(function (result) {
+                  if (!result) return;
+                  if (payload.type === "purchase") {
+                    return state.notarizationContract.verifyPurchase(payload.orderId);
+                  }
+                  if (payload.type === "shipment") {
+                    return state.notarizationContract.verifyShipment(payload.orderId);
+                  }
+                  return state.notarizationContract.verifyDelivery(payload.orderId);
+                })
+                .then(function (result) {
+                  if (!result) return;
+                  const timestamp = result && result.timestamp ? result.timestamp : result[1];
+                  if (timestamp && Number(timestamp) > 0) {
+                    if (statusEl) statusEl.textContent = "Verified on-chain.";
+                    if (timeEl) timeEl.textContent = "Notarized: " + formatTimestampFromSeconds(timestamp);
+                    if (proofForm) {
+                      const submitBtn = proofForm.querySelector("button[type=submit]");
+                      if (submitBtn) submitBtn.disabled = false;
+                    }
+                  }
+                })
+                .catch(function (err) {
+                  if (statusEl) statusEl.textContent = err.message || "Verification failed.";
+                });
+            }).catch(function (err) {
+              if (statusEl) statusEl.textContent = err.message || "Verification failed.";
+            });
           });
         });
       }
@@ -1027,47 +1061,52 @@
             const statusEl = card ? card.querySelector("[data-verify-status]") : null;
             const timeEl = card ? card.querySelector("[data-verify-timestamp]") : null;
             if (statusEl) statusEl.textContent = "Preparing receipt...";
-            connectWallet()
-              .then(function () { return ensureNotarizationReady(); })
-              .then(function () {
-                if (payload.type === "shipment") {
-                  return state.notarizationContract.verifyShipment(payload.orderId);
-                }
-                return state.notarizationContract.verifyDelivery(payload.orderId);
-              })
-              .then(function (result) {
-                const timestamp = result && result.timestamp ? result.timestamp : result[1];
-                if (!timestamp || Number(timestamp) === 0) {
-                  const receiptHash = buildReceiptHash(payload);
-                  const notarizeFn = payload.type === "shipment"
-                    ? state.notarizationContract.notarizeShipment
-                    : state.notarizationContract.notarizeDelivery;
-                  return notarizeFn(payload.orderId, receiptHash)
-                    .then(function (tx) { return tx.wait(); })
-                    .then(function () {
-                      if (payload.type === "shipment") {
-                        return state.notarizationContract.verifyShipment(payload.orderId);
-                      }
-                      return state.notarizationContract.verifyDelivery(payload.orderId);
-                    });
-                }
-                return result;
-              })
-              .then(function (result) {
-                const timestamp = result && result.timestamp ? result.timestamp : result[1];
-                const tsLabel = formatTimestampFromSeconds(timestamp);
-                if (timeEl) timeEl.textContent = "Notarized: " + tsLabel;
-                if (statusEl) statusEl.textContent = "Receipt ready.";
-                const win = window.open("", "_blank", "width=720,height=900");
-                if (!win) return;
-                win.document.write(buildReceiptHtml(payload, tsLabel));
-                win.document.close();
-                win.focus();
-                win.print();
-              })
-              .catch(function (err) {
-                if (statusEl) statusEl.textContent = err.message || "Receipt failed.";
-              });
+            withTxLock("receipt-print-" + payload.type + "-" + payload.orderId, function () {
+              return connectWallet()
+                .then(function () { return ensureNotarizationReady(); })
+                .then(function () {
+                  if (payload.type === "shipment") {
+                    return state.notarizationContract.verifyShipment(payload.orderId);
+                  }
+                  return state.notarizationContract.verifyDelivery(payload.orderId);
+                })
+                .then(function (result) {
+                  const timestamp = result && result.timestamp ? result.timestamp : result[1];
+                  if (!timestamp || Number(timestamp) === 0) {
+                    const receiptHash = buildReceiptHash(payload);
+                    const notarizeFn = payload.type === "shipment"
+                      ? state.notarizationContract.notarizeShipment
+                      : state.notarizationContract.notarizeDelivery;
+                    return notarizeFn(payload.orderId, receiptHash)
+                      .then(function (tx) { return tx.wait(); })
+                      .then(function () {
+                        if (payload.type === "shipment") {
+                          return state.notarizationContract.verifyShipment(payload.orderId);
+                        }
+                        return state.notarizationContract.verifyDelivery(payload.orderId);
+                      });
+                  }
+                  return result;
+                })
+                .then(function (result) {
+                  if (!result) return;
+                  const timestamp = result && result.timestamp ? result.timestamp : result[1];
+                  const tsLabel = formatTimestampFromSeconds(timestamp);
+                  if (timeEl) timeEl.textContent = "Notarized: " + tsLabel;
+                  if (statusEl) statusEl.textContent = "Receipt ready.";
+                  const win = window.open("", "_blank", "width=720,height=900");
+                  if (!win) return;
+                  win.document.write(buildReceiptHtml(payload, tsLabel));
+                  win.document.close();
+                  win.focus();
+                  win.print();
+                })
+                .catch(function (err) {
+                  if (statusEl) statusEl.textContent = err.message || "Receipt failed.";
+                });
+            }).catch(function (err) {
+              if (statusEl) statusEl.textContent = err.message || "Receipt failed.";
+            });
           });
         });
       }
@@ -1103,19 +1142,20 @@
             statusEl.textContent = "Preparing on-chain listing...";
             statusEl.setAttribute("data-status", "pending");
           }
-          ensureReady()
-            .then(function () {
-              const walletField = form.querySelector("#sellerWalletField");
-              if (walletField) {
-                walletField.value = state.account || "";
-              }
-              const formData = new FormData(form);
-              return fetch("/seller/listings", {
-                method: "POST",
-                headers: { "X-Prepare-Listing": "1" },
-                body: formData,
-              });
-            })
+          withTxLock("listing-create", function () {
+            return ensureReady()
+              .then(function () {
+                const walletField = form.querySelector("#sellerWalletField");
+                if (walletField) {
+                  walletField.value = state.account || "";
+                }
+                const formData = new FormData(form);
+                return fetch("/seller/listings", {
+                  method: "POST",
+                  headers: { "X-Prepare-Listing": "1" },
+                  body: formData,
+                });
+              })
             .then(function (res) {
               if (!res.ok) {
                 throw new Error("Unable to prepare listing.");
@@ -1199,6 +1239,7 @@
                 submitBtn.textContent = originalText;
               }
             });
+          });
         });
       }
 

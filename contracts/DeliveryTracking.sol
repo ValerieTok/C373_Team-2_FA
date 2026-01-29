@@ -20,6 +20,11 @@ contract DeliveryTracking {
         string trackingId;
     }
 
+    event ShipmentMarked(uint256 indexed orderId, address indexed actor, string trackingId);
+    event InTransitMarked(uint256 indexed orderId, address indexed actor);
+    event DeliveredMarked(uint256 indexed orderId, address indexed actor);
+    event DeliveryConfirmed(uint256 indexed orderId, address indexed actor);
+
     mapping(uint256 => Delivery) public deliveries;
 
     constructor(address orderRegistryAddress) {
@@ -33,6 +38,8 @@ contract DeliveryTracking {
             DeliveryStatus.Shipped,
             trackingId
         );
+
+        emit ShipmentMarked(orderId, msg.sender, trackingId);
     }
 
     function markInTransit(uint256 orderId) external {
@@ -40,6 +47,7 @@ contract DeliveryTracking {
         require(deliveries[orderId].status == DeliveryStatus.Shipped);
 
         deliveries[orderId].status = DeliveryStatus.InTransit;
+        emit InTransitMarked(orderId, msg.sender);
     }
 
     function markDelivered(uint256 orderId) external {
@@ -47,6 +55,7 @@ contract DeliveryTracking {
         require(deliveries[orderId].status == DeliveryStatus.InTransit);
 
         deliveries[orderId].status = DeliveryStatus.Delivered;
+        emit DeliveredMarked(orderId, msg.sender);
     }
 
     function confirmDelivery(uint256 orderId) external {
@@ -54,6 +63,7 @@ contract DeliveryTracking {
         require(deliveries[orderId].status == DeliveryStatus.Delivered);
 
         deliveries[orderId].status = DeliveryStatus.Confirmed;
+        emit DeliveryConfirmed(orderId, msg.sender);
     }
 
     function isConfirmed(uint256 orderId) external view returns (bool) {

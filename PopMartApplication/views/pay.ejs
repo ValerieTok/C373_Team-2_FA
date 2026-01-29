@@ -66,6 +66,7 @@
       contract: null,
       listingContract: null,
       account: null,
+      pending: false,
     };
 
     function setStatus(text, tone) {
@@ -148,6 +149,11 @@
     }
 
     async function pay() {
+      if (state.pending) {
+        throw new Error("Transaction already pending.");
+      }
+      state.pending = true;
+      try {
       validatePayload();
       await ensureWallet();
       await loadContracts();
@@ -176,6 +182,9 @@
           escrowOrderId: orderId.toString(),
         }),
       });
+      } finally {
+        state.pending = false;
+      }
     }
 
     function copyLink() {
