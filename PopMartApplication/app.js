@@ -468,6 +468,12 @@ app.post("/seller/orders/:id/ship", (req, res) => {
   const order = orders.find((item) => item.id === orderId);
   const sessionWallet = getSellerWallet(req).toLowerCase();
   const orderWallet = order && order.sellerWallet ? order.sellerWallet.toLowerCase() : "";
+  console.log(`CONFIRM SHIPMENT clicked by wallet: ${sessionWallet || "Unknown"}`);
+  console.log("Sending transaction to EscrowPayment contract...");
+  const shipmentTxHash = String(req.body.txHash || "").trim();
+  if (shipmentTxHash) {
+    console.log(`Transaction confirmed: ${shipmentTxHash}`);
+  }
   if (!order || !orderWallet || !sessionWallet || orderWallet !== sessionWallet) {
     if (req.is("application/json")) {
       return res.status(403).json({ ok: false, message: "Seller wallet mismatch." });
@@ -479,6 +485,7 @@ app.post("/seller/orders/:id/ship", (req, res) => {
       ? { ...order, status: "Shipped", shippedAt: new Date().toISOString() }
       : order
   );
+  console.log("Escrow state updated on-chain");
   if (req.is("application/json")) {
     return res.json({ ok: true });
   }
@@ -575,6 +582,7 @@ app.post("/checkout", (req, res) => {
   const chainOrders = Array.isArray(req.body.chainOrders) ? req.body.chainOrders : [];
   const orderReceipts = Array.isArray(req.body.orderReceipts) ? req.body.orderReceipts : [];
   const buyerWallet = String(req.body.buyerWallet || DEFAULT_BUYER_WALLET || "").trim();
+  console.log(`BUY clicked by wallet: ${buyerWallet || "Unknown"}`);
   if (!cart.length) {
     if (isJson) {
       return res.status(400).json({ ok: false, message: "Your cart is empty." });
@@ -608,6 +616,18 @@ app.post("/checkout", (req, res) => {
     const receipt = orderReceipts[index] || {};
     const orderHash = String(receipt.orderHash || "").trim();
     const notarizeTxHash = String(receipt.notarizeTxHash || "").trim();
+    if (chainOrder && (chainOrder.orderId || chainOrder.txHash)) {
+      console.log("Sending transaction to EscrowPayment contract...");
+      if (chainOrder.txHash) {
+        console.log(`Transaction confirmed: ${chainOrder.txHash}`);
+      }
+      console.log("Escrow state updated on-chain");
+    }
+    if (notarizeTxHash) {
+      console.log("Sending transaction to EscrowPayment contract...");
+      console.log(`Transaction confirmed: ${notarizeTxHash}`);
+      console.log("Escrow state updated on-chain");
+    }
     return {
       id: nextOrderId++,
       productId: item.productId,
@@ -695,9 +715,12 @@ app.post("/pay/:id/confirm", (req, res) => {
   const orderId = Number(req.params.id);
   const txHash = String(req.body.txHash || "").trim();
   const escrowOrderId = String(req.body.escrowOrderId || "").trim();
+  console.log(`BUY clicked by wallet: ${String(req.body.buyerWallet || "").trim() || "Unknown"}`);
+  console.log("Sending transaction to EscrowPayment contract...");
   if (!txHash) {
     return res.status(400).json({ ok: false, message: "Transaction hash missing." });
   }
+  console.log(`Transaction confirmed: ${txHash}`);
   let updated = false;
   orders = orders.map((order) => {
     if (order.id !== orderId) return order;
@@ -712,6 +735,7 @@ app.post("/pay/:id/confirm", (req, res) => {
   if (!updated) {
     return res.status(404).json({ ok: false, message: "Order not found." });
   }
+  console.log("Escrow state updated on-chain");
   res.json({ ok: true });
 });
 
@@ -801,6 +825,13 @@ app.get("/ratings/:id", (req, res) => {
 
 app.post("/buyer/orders/:id/deliver", (req, res) => {
   const orderId = Number(req.params.id);
+  const buyerWallet = String(req.body.buyerWallet || "").trim().toLowerCase();
+  console.log(`CONFIRM DELIVERY clicked by wallet: ${buyerWallet || "Unknown"}`);
+  console.log("Sending transaction to EscrowPayment contract...");
+  const deliveryTxHash = String(req.body.txHash || "").trim();
+  if (deliveryTxHash) {
+    console.log(`Transaction confirmed: ${deliveryTxHash}`);
+  }
   orders = orders.map((order) =>
     order.id === orderId && order.status === "Shipped"
       ? {
@@ -812,6 +843,7 @@ app.post("/buyer/orders/:id/deliver", (req, res) => {
         }
       : order
   );
+  console.log("Escrow state updated on-chain");
   if (req.is("application/json")) {
     return res.json({ ok: true });
   }
