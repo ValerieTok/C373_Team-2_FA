@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/ValerieTok/C373_Team-2_FA#readme",
   "dependencies": {
-    "@metamask/sdk": "^0.34.0"
+    "@metamask/sdk": "^0.34.0",
+    "web3": "^4.16.0"
   }
 }

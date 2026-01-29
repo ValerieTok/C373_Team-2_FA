@@ -57,9 +57,9 @@
   }
 
   async function loadArtifact() {
-    const res = await fetch("/build/EscrowPayment.json", { cache: "no-store" });
+    const res = await fetch("/build/PaymentEscrow.json", { cache: "no-store" });
     if (!res.ok) {
-      throw new Error("Missing contract artifact: /build/EscrowPayment.json");
+      throw new Error("Missing contract artifact: /build/PaymentEscrow.json");
     }
     return res.json();
   }

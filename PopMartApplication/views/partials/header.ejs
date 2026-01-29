@@ -83,6 +83,27 @@
       align-items: center;
       flex-wrap: wrap;
     }
+    .status-pill {
+      background: #e2e8f0;
+      color: #1f2937;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+    .status-text {
+      font-size: 12px;
+    }
+    .status-text[data-status="pending"] { color: #0f172a; }
+    .status-text[data-status="ok"] { color: #166534; }
+    .status-text[data-status="error"] { color: #b91c1c; }
+    .proof-preview {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
     .container {
       max-width: 1120px;
       margin: 28px auto 60px;
@@ -289,6 +310,8 @@
         <button class="btn btn-ghost" id="connectWalletBtn" type="button">Connect wallet</button>
         <button class="btn btn-outline" id="disconnectWalletBtn" type="button">Disconnect</button>
         <span class="mono" id="walletAddress" style="font-size:12px;"></span>
+        <span class="status-pill" id="walletRole" style="display:none;"></span>
+        <span class="status-pill" id="walletChain" style="display:none;"></span>
       </div>
       <div class="nav-links">
         <a href="/">Listings</a>

@@ -4,6 +4,7 @@ const express = require("express");
 const multer = require("multer");
 const session = require("express-session");
 const crypto = require("crypto");
+const { Web3 } = require("web3");
 
 require("dotenv").config();
 
@@ -11,6 +12,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DEFAULT_SELLER_WALLET = String(process.env.DEFAULT_SELLER_WALLET || "").trim();
 const DEFAULT_BUYER_WALLET = String(process.env.DEFAULT_BUYER_WALLET || "").trim();
+const GANACHE_RPC = process.env.GANACHE_RPC || "http://127.0.0.1:7545";
+const MARKETPLACE_LISTING_ADDRESS = String(
+  process.env.MARKETPLACE_LISTING_ADDRESS || ""
+).trim();
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -74,46 +79,60 @@ const uploadProof = multer({
   limits: { fileSize: 8 * 1024 * 1024 },
 });
 
-const seedProducts = [
-  {
-    id: 1,
-    name: "Solar Drift Capsule",
-    category: "Limited Drop",
-    sellerName: "Marketplace Seller",
-    sellerWallet: DEFAULT_SELLER_WALLET,
-    shortDesc: "Heat-washed resin with enamel crest.",
-    fullDesc:
-      "A glowing capsule figure with layered metallic ink and a numbered base card. Ships in a clear vault sleeve.",
-    priceEth: 0.38,
-    image: "/images/popmart1.png",
-  },
-  {
-    id: 2,
-    name: "Koi Circuit Guardian",
-    category: "Artist Series",
-    sellerName: "Marketplace Seller",
-    sellerWallet: DEFAULT_SELLER_WALLET,
-    shortDesc: "Chrome fins and etched circuit spine.",
-    fullDesc:
-      "Hand-finished details with micro-etching and a holographic cert. Escrow friendly for high-value trades.",
-    priceEth: 0.52,
-    image: "/images/popmart2.png",
-  },
-  {
-    id: 3,
-    name: "Moonlit Parade Trio",
-    category: "Collector",
-    sellerName: "Marketplace Seller",
-    sellerWallet: DEFAULT_SELLER_WALLET,
-    shortDesc: "Three-piece set with dusk gradients.",
-    fullDesc:
-      "A trio of parade figures with foil accents and foam-lined tray. Ships insured with tracking.",
-    priceEth: 0.29,
-    image: "/images/popmart3.png",
-  },
-];
+let products = [];
+let listingContract = null;
+let web3 = null;
 
-let products = seedProducts;
+async function initListingContract() {
+  if (listingContract) return listingContract;
+  if (!web3) {
+    web3 = new Web3(GANACHE_RPC);
+  }
+  const artifactPath = path.join(__dirname, "public", "build", "MarketplaceListing.json");
+  const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
+  const networkId = await web3.eth.net.getId();
+  const deployed =
+    MARKETPLACE_LISTING_ADDRESS ||
+    (artifact.networks && artifact.networks[String(networkId)]
+      ? artifact.networks[String(networkId)].address
+      : "");
+  if (!deployed) {
+    throw new Error("MarketplaceListing not deployed for this network.");
+  }
+  listingContract = new web3.eth.Contract(artifact.abi, deployed);
+  return listingContract;
+}
+
+async function loadListingsFromChain() {
+  try {
+    const contract = await initListingContract();
+    const nextIdRaw = await contract.methods.nextListingId().call();
+    const nextId = Number(nextIdRaw || 0);
+    const chainListings = [];
+    for (let id = 1; id < nextId; id += 1) {
+      const listing = await contract.methods.listings(id).call();
+      if (!listing || !listing.active) continue;
+      const priceEth = Number(web3.utils.fromWei(String(listing.priceWei || "0"), "ether"));
+      chainListings.push({
+        id: id,
+        name: listing.name || "Untitled Listing",
+        category: listing.category || "General",
+        sellerName: "Marketplace Seller",
+        sellerWallet: listing.seller || "",
+        shortDesc: listing.description || "",
+        fullDesc: listing.description || "",
+        priceEth: priceEth,
+        image: listing.imageUrl || "/images/popmart1.png",
+        isUserListing: true,
+      });
+    }
+    if (chainListings.length) {
+      products = chainListings;
+    }
+  } catch (err) {
+    console.error("Unable to load listings from chain:", err.message || err);
+  }
+}
 
 function getSellerWallet(req) {
   const sessionWallet = req && req.session ? String(req.session.sellerWallet || "") : "";
@@ -196,7 +215,7 @@ function verifyTrackToken(tokenData) {
 
 function getEscrowAddress() {
   try {
-    const artifactPath = path.join(__dirname, "build", "EscrowPayment.json");
+    const artifactPath = path.join(__dirname, "build", "PaymentEscrow.json");
     const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
     const networks = artifact.networks || {};
     const entry = Object.values(networks)[0];
@@ -363,6 +382,8 @@ app.post("/seller/wallet", (req, res) => {
 });
 
 app.post("/seller/listings", upload.single("imageFile"), (req, res) => {
+  const isPrepare = req.get("X-Prepare-Listing") === "1";
+  const isCommit = req.get("X-Commit-Listing") === "1";
   const {
     name,
     category,
@@ -370,31 +391,62 @@ app.post("/seller/listings", upload.single("imageFile"), (req, res) => {
     priceEth,
     sellerWallet,
     image,
+    listingId,
   } = req.body;
   const sellerWalletAddress = String(sellerWallet || getSellerWallet(req) || "").trim();
   if (!sellerWalletAddress) {
     return res.status(400).send("Seller wallet missing. Connect MetaMask and try again.");
   }
+  const sessionWallet = getSellerWallet(req);
+  if (sessionWallet && sellerWalletAddress.toLowerCase() !== sessionWallet.toLowerCase()) {
+    return res.status(403).send("Seller wallet mismatch. Connect the seller wallet and retry.");
+  }
 
   const imagePath = req.file
     ? `/images/${req.file.filename}`
     : String(image || "/images/popmart1.png").trim();
-  const product = {
-    id: nextProductId(),
-    name: String(name || "Untitled Listing").trim(),
-    category: String(category || "General").trim(),
-    sellerName: "Marketplace Seller",
-    sellerWallet: sellerWalletAddress,
-    shortDesc: String(shortDesc || "New listing").trim(),
-    fullDesc: String(shortDesc || "New listing").trim(),
-    priceEth: Number(priceEth || 0),
-    image: imagePath,
-    isUserListing: true,
-  };
+  const trimmedName = String(name || "Untitled Listing").trim();
+  const trimmedCategory = String(category || "General").trim();
+  const trimmedDesc = String(shortDesc || "New listing").trim();
+  const priceEthValue = Number(priceEth || 0);
 
-  products = [product, ...products];
-  draftQuantities[product.id] = 1;
-  res.redirect("/");
+  if (isPrepare) {
+    return res.json({
+      ok: true,
+      listing: {
+        name: trimmedName,
+        category: trimmedCategory,
+        shortDesc: trimmedDesc,
+        priceEth: priceEthValue,
+        sellerWallet: sellerWalletAddress,
+        image: imagePath,
+      },
+    });
+  }
+
+  if (isCommit && req.is("application/json")) {
+    const resolvedId = Number(listingId || 0);
+    if (!resolvedId) {
+      return res.status(400).json({ ok: false, message: "On-chain listing id missing." });
+    }
+    const product = {
+      id: resolvedId,
+      name: trimmedName,
+      category: trimmedCategory,
+      sellerName: "Marketplace Seller",
+      sellerWallet: sellerWalletAddress,
+      shortDesc: trimmedDesc,
+      fullDesc: trimmedDesc,
+      priceEth: priceEthValue,
+      image: imagePath,
+      isUserListing: true,
+    };
+    products = [product, ...products];
+    draftQuantities[product.id] = 1;
+    return res.json({ ok: true });
+  }
+
+  return res.status(400).send("On-chain listing required. Use the MetaMask flow.");
 });
 
 app.post("/listings/:id/qty/increase", (req, res) => {
@@ -450,8 +502,12 @@ app.post("/seller/orders/:id/proof-shipped", uploadProof.single("proofFile"), (r
   if (order.shipmentProofFile) {
     return res.status(400).send("Shipment proof already uploaded.");
   }
-  if (!req.file || !req.file.mimetype || !req.file.mimetype.startsWith("image/")) {
-    return res.status(400).send("Please upload an image file.");
+  if (
+    !req.file ||
+    !req.file.mimetype ||
+    (!req.file.mimetype.startsWith("image/") && req.file.mimetype !== "application/pdf")
+  ) {
+    return res.status(400).send("Please upload an image or PDF file.");
   }
   const proofFile = `/proofs/${req.file.filename}`;
   orders = orders.map((item) =>
@@ -781,8 +837,12 @@ app.post("/buyer/orders/:id/proof-delivered", uploadProof.single("proofFile"), (
   if (buyerWallet && order.buyerWallet && buyerWallet !== order.buyerWallet.toLowerCase()) {
     return res.status(403).send("Buyer wallet mismatch.");
   }
-  if (!req.file || !req.file.mimetype || !req.file.mimetype.startsWith("image/")) {
-    return res.status(400).send("Please upload an image file.");
+  if (
+    !req.file ||
+    !req.file.mimetype ||
+    (!req.file.mimetype.startsWith("image/") && req.file.mimetype !== "application/pdf")
+  ) {
+    return res.status(400).send("Please upload an image or PDF file.");
   }
   const proofFile = `/proofs/${req.file.filename}`;
   orders = orders.map((item) =>
@@ -845,3 +905,5 @@ app.post("/buyer/orders/:id/review/skip", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Marketplace UI running on http://localhost:${PORT}`);
 });
+
+loadListingsFromChain();

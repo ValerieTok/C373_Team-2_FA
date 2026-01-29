@@ -14,6 +14,7 @@
     <input name="buyerPhone" type="tel" placeholder="Buyer phone number" required />
     <input name="buyerAddress" type="text" placeholder="Shipping address" required />
     <button class="btn btn-alt" type="submit">Place order</button>
+    <span class="muted status-text" data-tx-status></span>
   </form>
   <% if (status) { %>
     <p class="muted" style="margin-top:12px;"><%= status %></p>

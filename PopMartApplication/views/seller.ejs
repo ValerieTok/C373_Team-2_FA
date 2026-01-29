@@ -45,7 +45,7 @@
   <section class="card fade-in">
     <h2 style="margin-top:0;">List a Product</h2>
     <p class="muted">Add a new listing that appears on the marketplace.</p>
-    <form action="/seller/listings" method="POST" class="stack" enctype="multipart/form-data">
+    <form action="/seller/listings" method="POST" class="stack" enctype="multipart/form-data" data-listing-create>
       <% const template = listingTemplate || {}; %>
       <input type="text" name="name" placeholder="Product name" value="<%= template.name || '' %>" required />
       <input type="text" name="category" placeholder="Category" value="<%= template.category || '' %>" required />
@@ -55,6 +55,7 @@
       <input type="text" name="shortDesc" placeholder="Short description" value="<%= template.shortDesc || '' %>" required />
       <input type="hidden" name="sellerWallet" id="sellerWalletField" value="<%= defaultSellerWallet %>" />
       <button class="btn btn-alt" type="submit">Publish Listing</button>
+      <span class="muted status-text" data-tx-status></span>
     </form>
   </section>
 
@@ -125,6 +126,7 @@
               >
                 <%= order.status === "Awaiting Shipment" ? "Confirm shipment" : "Shipment confirmed" %>
               </button>
+              <span class="muted status-text" data-tx-status style="margin-left:8px;"></span>
             </form>
             <% if (order.status === "Shipped" || order.status === "Delivered") { %>
               <div style="margin-top:10px; padding:10px 12px; border:1px dashed #e2e8f0; border-radius:12px;">
@@ -141,12 +143,37 @@
                     class="btn btn-outline"
                     type="button"
                     data-receipt-verify
-                    data-order-hash="<%= order.orderHash || '' %>"
-                    <%= order.orderHash ? "" : "disabled" %>
+                    data-order-id="<%= order.escrowOrderId || '' %>"
+                    data-receipt-type="shipment"
+                    data-can-notarize="true"
+                    data-seller-wallet="<%= order.sellerWallet || '' %>"
+                    data-buyer-wallet="<%= order.buyerWallet || '' %>"
+                    data-product-name="<%= order.productName || '' %>"
+                    data-qty="<%= order.qty %>"
+                    data-price-eth="<%= order.priceEth %>"
+                    data-shipped-at="<%= order.shippedAtDisplay %>"
+                    <%= order.orderHash && order.escrowOrderId ? "" : "disabled" %>
                   >
                     Verify receipt
                   </button>
-                  <span class="muted" data-verify-status style="margin-left:6px;"></span>
+                  <button
+                    class="btn btn-ghost"
+                    type="button"
+                    data-receipt-print
+                    data-receipt-type="shipment"
+                    data-order-id="<%= order.escrowOrderId || '' %>"
+                    <%= order.escrowOrderId ? "" : "disabled" %>
+                    data-seller-wallet="<%= order.sellerWallet || '' %>"
+                    data-buyer-wallet="<%= order.buyerWallet || '' %>"
+                    data-product-name="<%= order.productName || '' %>"
+                    data-qty="<%= order.qty %>"
+                    data-price-eth="<%= order.priceEth %>"
+                    data-shipped-at="<%= order.shippedAtDisplay %>"
+                  >
+                    Print receipt
+                  </button>
+                  <span class="muted status-text" data-verify-status style="margin-left:6px;"></span>
+                  <span class="muted status-text" data-verify-timestamp style="margin-left:6px;"></span>
                 </div>
                 <% if (order.shipmentProofFile) { %>
                   <a class="btn btn-ghost" style="margin-top:8px;" href="<%= order.shipmentProofFile %>" target="_blank" rel="noopener">
@@ -160,11 +187,66 @@
                     enctype="multipart/form-data"
                     data-proof-upload
                   >
-                    <input type="file" name="proofFile" accept="image/*" required />
+                    <input type="file" name="proofFile" accept="image/*,application/pdf" required data-proof-input />
+                    <div class="muted" style="font-size:12px;">PNG/JPG/PDF up to 8MB.</div>
+                    <div class="proof-preview">
+                      <img
+                        class="thumb"
+                        data-proof-preview
+                        alt="Shipment proof preview"
+                        style="width:56px; height:56px; border-radius:10px; border:1px solid #e2e8f0; object-fit:cover; display:none;"
+                      />
+                      <span class="muted" data-proof-meta></span>
+                    </div>
                     <button class="btn btn-ghost" type="submit" disabled>Upload shipment proof</button>
-                    <span class="muted">Verify the receipt to enable upload.</span>
+                    <span class="muted status-text" data-tx-status>Verify the receipt to enable upload.</span>
                   </form>
                 <% } %>
+              </div>
+            <% } %>
+            <% if (order.status === "Delivered") { %>
+              <div style="margin-top:10px; padding:10px 12px; border:1px dashed #e2e8f0; border-radius:12px;">
+                <strong>Delivery receipt</strong>
+                <p class="muted" style="margin:6px 0 0;">
+                  Generate and print a notarized receipt after delivery is completed.
+                </p>
+                <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                  <button
+                    class="btn btn-outline"
+                    type="button"
+                    data-receipt-verify
+                    data-receipt-type="delivery"
+                    data-order-id="<%= order.escrowOrderId || '' %>"
+                    data-can-notarize="true"
+                    data-seller-wallet="<%= order.sellerWallet || '' %>"
+                    data-buyer-wallet="<%= order.buyerWallet || '' %>"
+                    data-product-name="<%= order.productName || '' %>"
+                    data-qty="<%= order.qty %>"
+                    data-price-eth="<%= order.priceEth %>"
+                    data-delivered-at="<%= order.deliveredAtDisplay %>"
+                    <%= order.escrowOrderId ? "" : "disabled" %>
+                  >
+                    Verify delivery receipt
+                  </button>
+                  <button
+                    class="btn btn-ghost"
+                    type="button"
+                    data-receipt-print
+                    data-receipt-type="delivery"
+                    data-order-id="<%= order.escrowOrderId || '' %>"
+                    <%= order.escrowOrderId ? "" : "disabled" %>
+                    data-seller-wallet="<%= order.sellerWallet || '' %>"
+                    data-buyer-wallet="<%= order.buyerWallet || '' %>"
+                    data-product-name="<%= order.productName || '' %>"
+                    data-qty="<%= order.qty %>"
+                    data-price-eth="<%= order.priceEth %>"
+                    data-delivered-at="<%= order.deliveredAtDisplay %>"
+                  >
+                    Print receipt
+                  </button>
+                  <span class="muted status-text" data-verify-status style="margin-left:6px;"></span>
+                  <span class="muted status-text" data-verify-timestamp style="margin-left:6px;"></span>
+                </div>
               </div>
             <% } %>
           </div>

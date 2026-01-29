@@ -90,7 +90,7 @@
         .toString();
       const expectedOrderId = await contract.methods.nextOrderId().call();
       const receipt = await contract.methods
-        .createOrder(item.sellerWallet, item.productId, qty, unitPriceWei)
+        .createOrder(account, item.sellerWallet, item.productId, qty, unitPriceWei)
         .send({ from: account, value: totalWei });
       const orderHash = web3.utils.soliditySha3(
         { type: "address", value: account },

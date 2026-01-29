@@ -7,6 +7,8 @@
     (function () {
       const walletBtn = document.getElementById("connectWalletBtn");
       const walletLabel = document.getElementById("walletAddress");
+      const walletRole = document.getElementById("walletRole");
+      const walletChain = document.getElementById("walletChain");
       const disconnectBtn = document.getElementById("disconnectWalletBtn");
       const sellerVerifyForm = document.getElementById("sellerVerifyForm");
       const sellerVerificationStatus = document.getElementById("sellerVerificationStatus");
@@ -27,10 +29,15 @@
         provider: null,
         signer: null,
         account: null,
-        contract: null,
+        chainId: null,
+        escrowContract: null,
+        listingContract: null,
+        orderRegistry: null,
+        deliveryTracking: null,
+        sellerReputation: null,
+        notarizationContract: null,
         verification: { seller: false, buyer: false },
       };
-      const GAS_LIMIT = 600000;
       const STORAGE_KEYS = {
         seller: "popmartSellerWallet",
         buyer: "popmartBuyerWallet",
@@ -79,8 +86,8 @@
             })
             .filter(Boolean)
         );
-        const isSeller = sellerWallets.has(account);
-        const isBuyer = buyerWallets.has(account);
+        const isSeller = sellerWallets.has(account) || isSellerPage();
+        const isBuyer = buyerWallets.has(account) || isBuyerPage() || Boolean(checkoutForm);
         if (isSeller && isBuyer) return "Buyer/Seller";
         if (isSeller) return "Seller";
         if (isBuyer) return "Buyer";
@@ -88,8 +95,8 @@
       }
 
       function setWalletUI(address) {
+        const role = address ? getRoleLabel(address) : "";
         if (walletLabel) {
-          const role = address ? getRoleLabel(address) : "";
           if (!address) {
             walletLabel.textContent = "";
           } else if (role) {
@@ -103,6 +110,19 @@
         }
         if (sellerWalletField) {
           sellerWalletField.value = address || "";
+        }
+        if (walletRole) {
+          if (address && role) {
+            walletRole.style.display = "inline-flex";
+            walletRole.textContent = role;
+          } else {
+            walletRole.style.display = "none";
+            walletRole.textContent = "";
+          }
+        }
+        if (walletChain) {
+          walletChain.style.display = "none";
+          walletChain.textContent = "";
         }
       }
 
@@ -127,8 +147,8 @@
       function setBuyerVerificationHint(verified) {
         if (!buyerVerificationHint) return;
         buyerVerificationHint.textContent = verified
-          ? "Buyer details verified on-chain."
-          : "Add phone + email and sign with MetaMask before checkout.";
+          ? "Buyer details captured for checkout."
+          : "Add phone + email before checkout.";
       }
 
       function getProvider() {
@@ -193,7 +213,7 @@
         return null;
       }
 
-      async function initContract() {
+      async function initContracts() {
         if (!window.ethers) {
           throw new Error("Ethers library not loaded.");
         }
@@ -205,39 +225,108 @@
           state.provider = new window.ethers.providers.Web3Provider(provider);
           state.signer = state.provider.getSigner();
         }
-        const artifact = await loadArtifact("/build/EscrowPayment.json");
-        const deployment = await resolveAddress(artifact, state.provider);
-        if (!deployment.address) {
-          const suffix = deployment.networkId ? ` (network id ${deployment.networkId})` : "";
-          throw new Error(`Escrow contract not deployed for chain ${deployment.chainId}${suffix}.`);
+        const escrowArtifact = await loadArtifact("/build/PaymentEscrow.json");
+        const escrowDeployment = await resolveAddress(escrowArtifact, state.provider);
+        if (!escrowDeployment.address) {
+          const suffix = escrowDeployment.networkId ? ` (network id ${escrowDeployment.networkId})` : "";
+          throw new Error(`Escrow contract not deployed for chain ${escrowDeployment.chainId}${suffix}.`);
         }
-        const code = await state.provider.getCode(deployment.address);
-        if (!code || code === "0x") {
-          const discovered = await findDeployedAddress(artifact, state.provider);
+        const escrowCode = await state.provider.getCode(escrowDeployment.address);
+        if (!escrowCode || escrowCode === "0x") {
+          const discovered = await findDeployedAddress(escrowArtifact, state.provider);
           if (discovered) {
-            deployment.address = discovered.address;
-            deployment.usedNetworkKey = discovered.usedNetworkKey;
+            escrowDeployment.address = discovered.address;
+            escrowDeployment.usedNetworkKey = discovered.usedNetworkKey;
           } else {
-          const suffix = deployment.networkId ? `, network id ${deployment.networkId}` : "";
-          const usedKey = deployment.usedNetworkKey
-            ? ` from artifact network ${deployment.usedNetworkKey}`
-            : "";
-          throw new Error(
-            `Escrow contract not found at ${deployment.address}. You are on chain ${deployment.chainId}${suffix}${usedKey}. Check MetaMask RPC (Ganache 127.0.0.1:7545) or re-deploy.`
-          );
+            const suffix = escrowDeployment.networkId ? `, network id ${escrowDeployment.networkId}` : "";
+            const usedKey = escrowDeployment.usedNetworkKey
+              ? ` from artifact network ${escrowDeployment.usedNetworkKey}`
+              : "";
+            throw new Error(
+              `Escrow contract not found at ${escrowDeployment.address}. You are on chain ${escrowDeployment.chainId}${suffix}${usedKey}. Check MetaMask RPC (Ganache 127.0.0.1:7545) or re-deploy.`
+            );
           }
         }
-        state.contract = new window.ethers.Contract(
-          deployment.address,
-          artifact.abi,
+        state.escrowContract = new window.ethers.Contract(
+          escrowDeployment.address,
+          escrowArtifact.abi,
           state.signer
         );
+
+        const [listingAddress, orderRegistryAddress, deliveryAddress] = await Promise.all([
+          state.escrowContract.listingContract(),
+          state.escrowContract.orderRegistry(),
+          state.escrowContract.deliveryTracking(),
+        ]);
+
+        const listingArtifact = await loadArtifact("/build/MarketplaceListing.json");
+        state.listingContract = new window.ethers.Contract(
+          listingAddress,
+          listingArtifact.abi,
+          state.signer
+        );
+
+        const registryArtifact = await loadArtifact("/build/OrderRegistry.json");
+        state.orderRegistry = new window.ethers.Contract(
+          orderRegistryAddress,
+          registryArtifact.abi,
+          state.signer
+        );
+
+        const deliveryArtifact = await loadArtifact("/build/DeliveryTracking.json");
+        state.deliveryTracking = new window.ethers.Contract(
+          deliveryAddress,
+          deliveryArtifact.abi,
+          state.signer
+        );
+
+        const reputationArtifact = await loadArtifact("/build/SellerReputation.json");
+        const reputationDeployment = await resolveAddress(reputationArtifact, state.provider);
+        if (reputationDeployment.address) {
+          state.sellerReputation = new window.ethers.Contract(
+            reputationDeployment.address,
+            reputationArtifact.abi,
+            state.signer
+          );
+        }
+
+        const notarizationArtifact = await loadArtifact("/build/Notarization.json");
+        const notarizationDeployment = await resolveAddress(notarizationArtifact, state.provider);
+        if (notarizationDeployment.address) {
+          state.notarizationContract = new window.ethers.Contract(
+            notarizationDeployment.address,
+            notarizationArtifact.abi,
+            state.signer
+          );
+        }
+      }
+
+      async function initNotarizationContract() {
+        await initContracts();
+        if (!state.notarizationContract) {
+          throw new Error("Notarization contract not deployed on this network.");
+        }
       }
 
       async function connectWallet() {
         const provider = getProvider();
         if (!provider) {
           throw new Error("MetaMask not detected.");
+        }
+        try {
+          if (provider.request) {
+            await provider.request({
+              method: "wallet_requestPermissions",
+              params: [{ eth_accounts: {} }],
+            });
+          }
+        } catch (err) {
+          if (err && err.code === -32002) {
+            throw new Error("MetaMask request already pending. Open MetaMask to continue.");
+          }
+          if (err && err.code !== 4001) {
+            // Ignore non-critical permission errors and fall back to requesting accounts.
+          }
         }
         try {
           await provider.request({
@@ -263,6 +352,10 @@
         }
         const accounts = await provider.request({ method: "eth_requestAccounts" });
         state.account = accounts && accounts.length ? accounts[0] : null;
+        if (state.provider) {
+          const network = await state.provider.getNetwork().catch(function () { return null; });
+          state.chainId = network ? Number(network.chainId) : null;
+        }
         setWalletUI(state.account);
         if (state.account) {
           if (isSellerPage()) {
@@ -271,8 +364,8 @@
             rememberWallet("buyer", state.account);
           }
         }
-        if (!state.contract) {
-          await initContract();
+        if (!state.escrowContract) {
+          await initContracts();
         }
         await fetchVerificationStatus(state.account);
         await syncSellerWallet(state.account);
@@ -301,6 +394,10 @@
         }
         const accounts = await provider.request({ method: "eth_requestAccounts" });
         state.account = accounts && accounts.length ? accounts[0] : null;
+        if (state.provider) {
+          const network = await state.provider.getNetwork().catch(function () { return null; });
+          state.chainId = network ? Number(network.chainId) : null;
+        }
         setWalletUI(state.account);
         if (state.account) {
           if (isSellerPage()) {
@@ -309,8 +406,8 @@
             rememberWallet("buyer", state.account);
           }
         }
-        if (!state.contract) {
-          await initContract();
+        if (!state.escrowContract) {
+          await initContracts();
         }
         await fetchVerificationStatus(state.account);
         await syncSellerWallet(state.account);
@@ -323,10 +420,14 @@
         const accounts = await provider.request({ method: "eth_accounts" });
         const account = accounts && accounts.length ? accounts[0] : "";
         state.account = account || null;
+        if (state.provider) {
+          const network = await state.provider.getNetwork().catch(function () { return null; });
+          state.chainId = network ? Number(network.chainId) : null;
+        }
         setWalletUI(account);
         if (account) {
-          if (!state.contract) {
-            await initContract();
+          if (!state.escrowContract) {
+            await initContracts();
           }
           await fetchVerificationStatus(account);
           await syncSellerWallet(account);
@@ -341,8 +442,17 @@
         if (!state.account) {
           await connectWallet();
         }
-        if (!state.contract) {
-          await initContract();
+        if (!state.escrowContract) {
+          await initContracts();
+        }
+      }
+
+      async function ensureNotarizationReady() {
+        if (!state.account) {
+          await connectWallet();
+        }
+        if (!state.notarizationContract) {
+          await initNotarizationContract();
         }
       }
 
@@ -369,26 +479,25 @@
       }
 
       async function fetchVerificationStatus(address) {
-        if (!state.contract || !address) {
+        if (!address) {
           state.verification = { seller: false, buyer: false };
           setSellerLockUI(false);
           setBuyerVerificationHint(false);
           return state.verification;
         }
-        const info = await state.contract.getVerification(address);
-        const sellerVerified = Boolean(info.sellerVerified);
-        const buyerVerified = Boolean(info.buyerVerified);
+        const sellerVerified = Boolean(address);
+        const buyerVerified = Boolean(address);
         state.verification = { seller: sellerVerified, buyer: buyerVerified };
         setSellerLockUI(sellerVerified);
         setBuyerVerificationHint(buyerVerified);
         if (sellerVerificationStatus) {
           sellerVerificationStatus.textContent = sellerVerified
-            ? "Seller verified for " + address
-            : "Not verified yet.";
+            ? "Wallet connected for " + address
+            : "Connect a wallet to continue.";
         }
         if (sellerVerifiedSummaryText) {
           sellerVerifiedSummaryText.textContent = sellerVerified
-            ? "Seller verified for " + address
+            ? "Wallet connected for " + address
             : "";
         }
         return state.verification;
@@ -417,6 +526,18 @@
         return message.replace("execution reverted: ", "").trim();
       }
 
+      function normalizeWalletError(err) {
+        if (!err) return "Transaction failed.";
+        if (err.code === 4001 || err.code === "ACTION_REJECTED") {
+          return "Transaction cancelled in MetaMask.";
+        }
+        const raw = normalizeRpcError(err);
+        if (/user rejected/i.test(raw)) {
+          return "Transaction cancelled in MetaMask.";
+        }
+        return raw || "Transaction failed.";
+      }
+
       async function ensureSellerVerification(form) {
         if (!form) return state.verification;
         const name = form.querySelector("[name=sellerName]").value.trim();
@@ -427,22 +548,25 @@
         }
         await requestAccountSelection();
         if (state.verification.seller) return state.verification;
-        const tx = await state.contract.verifySeller(name, email, phone, { gasLimit: GAS_LIMIT });
-        await tx.wait();
-        return fetchVerificationStatus(state.account);
+        state.verification = { ...state.verification, seller: true };
+        setSellerLockUI(true);
+        if (sellerVerificationStatus) {
+          sellerVerificationStatus.textContent = "Wallet connected for " + state.account;
+        }
+        if (sellerVerifiedSummaryText) {
+          sellerVerifiedSummaryText.textContent = "Wallet connected for " + state.account;
+        }
+        return state.verification;
       }
 
       async function ensureBuyerVerification(info) {
         await ensureReady();
         const current = await fetchVerificationStatus(state.account);
         if (current.buyer) return current;
-        const tx = await state.contract.verifyBuyer(info.name, info.email, info.phone, { gasLimit: GAS_LIMIT });
-        await tx.wait();
-        return fetchVerificationStatus(state.account);
-      }
-
-      async function getNextOrderId() {
-        return state.contract.nextOrderId();
+        const hasInfo = Boolean(info && info.name && info.email && info.phone);
+        state.verification = { ...state.verification, buyer: hasInfo };
+        setBuyerVerificationHint(hasInfo);
+        return state.verification;
       }
 
       async function handleCheckout(form) {
@@ -484,27 +608,46 @@
             );
           }
           const qty = Number(item.qty || 0);
-          const unitPriceWei = window.ethers.utils.parseEther(String(item.priceEth || 0));
-          const totalWei = unitPriceWei.mul(window.ethers.BigNumber.from(qty));
-          const expectedOrderId = await getNextOrderId();
-          const tx = await state.contract.createOrder(
-            item.productId,
-            qty,
-            unitPriceWei,
-            { value: totalWei }
-          );
+          const listingId = Number(item.productId || 0);
+          const itemPriceWei = window.ethers.utils.parseEther(String(item.priceEth || 0));
+          const priceWei = await state.listingContract.getPrice(listingId);
+          let expectedOrderId = null;
+          let tx = null;
+          if (priceWei && !priceWei.eq(0) && priceWei.eq(itemPriceWei)) {
+            const totalWei = priceWei.mul(window.ethers.BigNumber.from(qty));
+            expectedOrderId = await state.escrowContract.callStatic.pay(
+              listingId,
+              qty,
+              { value: totalWei }
+            );
+            tx = await state.escrowContract.pay(listingId, qty, { value: totalWei });
+          } else {
+            expectedOrderId = await state.orderRegistry.callStatic.createOrder(
+              listingId,
+              state.account,
+              item.sellerWallet,
+              qty
+            );
+            tx = await state.orderRegistry.createOrder(
+              listingId,
+              state.account,
+              item.sellerWallet,
+              qty
+            );
+          }
           const receipt = await tx.wait();
           const orderHash = window.ethers.utils.solidityKeccak256(
             ["address", "address", "uint256", "uint256", "uint256", "uint256", "uint256"],
-            [state.account, item.sellerWallet, item.productId, qty, unitPriceWei, expectedOrderId, chainId]
+            [state.account, item.sellerWallet, listingId, qty, itemPriceWei, expectedOrderId, chainId]
           );
-          const notarizeTx = await state.contract.notarizePurchase(
-            orderHash,
-            item.productId,
-            qty,
-            unitPriceWei
-          );
-          const notarizeReceipt = await notarizeTx.wait();
+          let notarizeReceipt = null;
+          if (state.notarizationContract) {
+            const notarizeTx = await state.notarizationContract.notarizePurchase(
+              expectedOrderId,
+              orderHash
+            );
+            notarizeReceipt = await notarizeTx.wait();
+          }
           chainOrders.push({
             orderId: String(expectedOrderId),
             txHash: receipt.transactionHash,
@@ -512,7 +655,7 @@
           orderReceipts.push({
             orderHash: orderHash,
             escrowOrderId: String(expectedOrderId),
-            notarizeTxHash: notarizeReceipt.transactionHash,
+            notarizeTxHash: notarizeReceipt ? notarizeReceipt.transactionHash : "",
           });
         }
 
@@ -560,9 +703,16 @@
         }
         if (action === "ship") {
           try {
-            const chainOrder = await state.contract.getOrder(escrowOrderId);
-            if (!chainOrder.shipped) {
-              await (await state.contract.confirmShipment(escrowOrderId)).wait();
+            const delivery = await state.deliveryTracking.deliveries(escrowOrderId);
+            const status = Number(delivery && delivery.status != null ? delivery.status : 0);
+            if (status < 1) {
+              await (await state.deliveryTracking.markShipped(escrowOrderId, "")).wait();
+            }
+            if (status < 2) {
+              await (await state.deliveryTracking.markInTransit(escrowOrderId)).wait();
+            }
+            if (status < 3) {
+              await (await state.deliveryTracking.markDelivered(escrowOrderId)).wait();
             }
           } catch (err) {
             const reason = normalizeRpcError(err);
@@ -570,8 +720,10 @@
           }
         } else if (action === "deliver") {
           try {
-            await (await state.contract.confirmDelivery(escrowOrderId)).wait();
-            await (await state.contract.releasePayment(escrowOrderId)).wait();
+            await (await state.deliveryTracking.confirmDelivery(escrowOrderId)).wait();
+            if (state.escrowContract) {
+              await (await state.escrowContract.release(escrowOrderId)).wait();
+            }
           } catch (err) {
             const reason = normalizeRpcError(err);
             throw new Error(reason || "Delivery confirmation failed.");
@@ -580,7 +732,10 @@
           const stars = Number(form.querySelector("[name=stars]").value || 5);
           const comment = form.querySelector("[name=comment]").value || "";
           try {
-            await (await state.contract.submitRating(escrowOrderId, stars, comment)).wait();
+            if (!state.sellerReputation) {
+              throw new Error("Seller reputation contract not deployed.");
+            }
+            await (await state.sellerReputation.rateOrder(escrowOrderId, stars)).wait();
           } catch (err) {
             const reason = normalizeRpcError(err);
             throw new Error(reason || "Rating submission failed.");
@@ -635,7 +790,7 @@
           }
           ensureReady()
             .then(function () { return handleCheckout(form); })
-            .catch(function (err) { alert(err.message || "Checkout failed."); })
+            .catch(function (err) { alert(normalizeWalletError(err)); })
             .finally(function () {
               if (submitBtn) {
                 submitBtn.disabled = false;
@@ -669,7 +824,7 @@
                 sellerVerificationStatus.textContent = "Seller verified for " + state.account;
               }
             })
-            .catch(function (err) { alert(err.message || "Seller verification failed."); })
+            .catch(function (err) { alert(normalizeWalletError(err)); })
             .finally(function () {
               if (submitBtn) {
                 submitBtn.disabled = false;
@@ -692,7 +847,7 @@
             }
             ensureReady()
               .then(function () { return handleEscrowAction(form); })
-              .catch(function (err) { alert(err.message || "Transaction failed."); })
+              .catch(function (err) { alert(normalizeWalletError(err)); })
               .finally(function () {
                 if (submitBtn) {
                   submitBtn.disabled = false;
@@ -703,35 +858,215 @@
         });
       }
 
+      function getReceiptPayload(btn) {
+        return {
+          orderId: Number(btn.dataset.orderId || 0),
+          type: String(btn.dataset.receiptType || "delivery"),
+          seller: String(btn.dataset.sellerWallet || ""),
+          buyer: String(btn.dataset.buyerWallet || ""),
+          productName: String(btn.dataset.productName || ""),
+          qty: Number(btn.dataset.qty || 0),
+          priceEth: String(btn.dataset.priceEth || "0"),
+          deliveredAt: String(btn.dataset.deliveredAt || ""),
+          shippedAt: String(btn.dataset.shippedAt || ""),
+        };
+      }
+
+      function buildReceiptHash(payload) {
+        const priceWei = window.ethers.utils.parseEther(String(payload.priceEth || "0"));
+        return window.ethers.utils.solidityKeccak256(
+          ["uint256", "address", "address", "string", "uint256", "uint256", "string"],
+          [
+            payload.orderId,
+            payload.seller || window.ethers.constants.AddressZero,
+            payload.buyer || window.ethers.constants.AddressZero,
+            payload.productName,
+            payload.qty,
+            priceWei,
+            payload.type,
+          ]
+        );
+      }
+
+      function formatTimestampFromSeconds(seconds) {
+        const ts = Number(seconds || 0);
+        if (!ts) return "";
+        const date = new Date(ts * 1000);
+        return date.toLocaleString();
+      }
+
       function bindReceiptVerification() {
         const buttons = document.querySelectorAll("[data-receipt-verify]");
         buttons.forEach(function (btn) {
           btn.addEventListener("click", function () {
-            const hash = String(btn.dataset.orderHash || "");
+            const payload = getReceiptPayload(btn);
             const card = btn.closest("div");
             const statusEl = card ? card.querySelector("[data-verify-status]") : null;
+            const timeEl = card ? card.querySelector("[data-verify-timestamp]") : null;
             const proofForm = btn.closest("div") && btn.closest("div").parentElement
               ? btn.closest("div").parentElement.querySelector("form[data-proof-upload]")
               : null;
-            if (!hash) return;
+            if (!payload.orderId) return;
+            if (!window.ethereum) {
+              if (statusEl) statusEl.textContent = "MetaMask not detected.";
+              return;
+            }
             if (statusEl) statusEl.textContent = "Verifying...";
-            ensureReady()
+            if (timeEl) timeEl.textContent = "";
+            connectWallet()
+              .then(function () { return ensureNotarizationReady(); })
               .then(function () {
-                return state.contract.orderHashBuyer(hash);
+                if (payload.type === "purchase") {
+                  return state.notarizationContract.verifyPurchase(payload.orderId);
+                }
+                if (payload.type === "shipment") {
+                  return state.notarizationContract.verifyShipment(payload.orderId);
+                }
+                return state.notarizationContract.verifyDelivery(payload.orderId);
               })
-              .then(function (buyer) {
-                if (buyer && buyer !== window.ethers.constants.AddressZero) {
+              .then(function (result) {
+                const timestamp = result && result.timestamp ? result.timestamp : result[1];
+                if (timestamp && Number(timestamp) > 0) {
                   if (statusEl) statusEl.textContent = "Verified on-chain.";
+                  if (timeEl) timeEl.textContent = "Notarized: " + formatTimestampFromSeconds(timestamp);
                   if (proofForm) {
                     const submitBtn = proofForm.querySelector("button[type=submit]");
                     if (submitBtn) submitBtn.disabled = false;
                   }
-                } else if (statusEl) {
-                  statusEl.textContent = "Not verified on-chain.";
+                  return null;
+                }
+                const canNotarize = String(btn.dataset.canNotarize || "") === "true";
+                if (!canNotarize) {
+                  if (statusEl) statusEl.textContent = "Not notarized yet.";
+                  return null;
+                }
+                const receiptHash = buildReceiptHash(payload);
+                if (statusEl) statusEl.textContent = "Notarizing...";
+                if (payload.type === "purchase") {
+                  return state.notarizationContract.notarizePurchase(payload.orderId, receiptHash);
+                }
+                if (payload.type === "shipment") {
+                  return state.notarizationContract.notarizeShipment(payload.orderId, receiptHash);
+                }
+                return state.notarizationContract.notarizeDelivery(payload.orderId, receiptHash);
+              })
+              .then(function (tx) {
+                if (!tx) return null;
+                return tx.wait();
+              })
+              .then(function (result) {
+                if (!result) return;
+                const timestamp = result && result.timestamp ? result.timestamp : result[1];
+                if (timestamp && Number(timestamp) > 0) {
+                  if (statusEl) statusEl.textContent = "Verified on-chain.";
+                  if (timeEl) timeEl.textContent = "Notarized: " + formatTimestampFromSeconds(timestamp);
+                  if (proofForm) {
+                    const submitBtn = proofForm.querySelector("button[type=submit]");
+                    if (submitBtn) submitBtn.disabled = false;
+                  }
                 }
               })
               .catch(function (err) {
                 if (statusEl) statusEl.textContent = err.message || "Verification failed.";
+              });
+          });
+        });
+      }
+
+      function buildReceiptHtml(payload, timestampLabel) {
+        const priceEth = payload.priceEth || "0";
+        const deliveredAt = payload.deliveredAt || "Pending";
+        const shippedAt = payload.shippedAt || "Pending";
+        const title = payload.type === "shipment" ? "Shipment Receipt" : "Delivery Receipt";
+        return `
+          <html>
+            <head>
+              <title>${title}</title>
+              <style>
+                body { font-family: "Segoe UI", Arial, sans-serif; padding: 24px; color: #111827; }
+                h1 { margin: 0 0 8px; font-size: 22px; }
+                .muted { color: #6b7280; font-size: 12px; }
+                .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-top: 12px; }
+                .row { display: flex; justify-content: space-between; margin: 6px 0; }
+              </style>
+            </head>
+            <body>
+              <h1>${title}</h1>
+              <div class="muted">Generated by seller</div>
+              <div class="card">
+                <div class="row"><strong>Order ID</strong><span>#${payload.orderId}</span></div>
+                <div class="row"><strong>Product</strong><span>${payload.productName}</span></div>
+                <div class="row"><strong>Qty</strong><span>${payload.qty}</span></div>
+                <div class="row"><strong>Price</strong><span>${priceEth} ETH</span></div>
+                <div class="row"><strong>Seller</strong><span>${payload.seller}</span></div>
+                <div class="row"><strong>Buyer</strong><span>${payload.buyer}</span></div>
+                ${
+                  payload.type === "shipment"
+                    ? `<div class="row"><strong>Shipped</strong><span>${shippedAt}</span></div>`
+                    : `<div class="row"><strong>Delivered</strong><span>${deliveredAt}</span></div>`
+                }
+                <div class="row"><strong>Notarized</strong><span>${timestampLabel || "Pending"}</span></div>
+                <div class="muted" style="margin-top:10px;">This receipt is notarized on-chain.</div>
+              </div>
+            </body>
+          </html>
+        `;
+      }
+
+      function bindReceiptPrint() {
+        const buttons = document.querySelectorAll("[data-receipt-print]");
+        buttons.forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            const payload = getReceiptPayload(btn);
+            if (!payload.orderId) return;
+            if (!window.ethereum) {
+              alert("MetaMask not detected.");
+              return;
+            }
+            const card = btn.closest("div");
+            const statusEl = card ? card.querySelector("[data-verify-status]") : null;
+            const timeEl = card ? card.querySelector("[data-verify-timestamp]") : null;
+            if (statusEl) statusEl.textContent = "Preparing receipt...";
+            connectWallet()
+              .then(function () { return ensureNotarizationReady(); })
+              .then(function () {
+                if (payload.type === "shipment") {
+                  return state.notarizationContract.verifyShipment(payload.orderId);
+                }
+                return state.notarizationContract.verifyDelivery(payload.orderId);
+              })
+              .then(function (result) {
+                const timestamp = result && result.timestamp ? result.timestamp : result[1];
+                if (!timestamp || Number(timestamp) === 0) {
+                  const receiptHash = buildReceiptHash(payload);
+                  const notarizeFn = payload.type === "shipment"
+                    ? state.notarizationContract.notarizeShipment
+                    : state.notarizationContract.notarizeDelivery;
+                  return notarizeFn(payload.orderId, receiptHash)
+                    .then(function (tx) { return tx.wait(); })
+                    .then(function () {
+                      if (payload.type === "shipment") {
+                        return state.notarizationContract.verifyShipment(payload.orderId);
+                      }
+                      return state.notarizationContract.verifyDelivery(payload.orderId);
+                    });
+                }
+                return result;
+              })
+              .then(function (result) {
+                const timestamp = result && result.timestamp ? result.timestamp : result[1];
+                const tsLabel = formatTimestampFromSeconds(timestamp);
+                if (timeEl) timeEl.textContent = "Notarized: " + tsLabel;
+                if (statusEl) statusEl.textContent = "Receipt ready.";
+                const win = window.open("", "_blank", "width=720,height=900");
+                if (!win) return;
+                win.document.write(buildReceiptHtml(payload, tsLabel));
+                win.document.close();
+                win.focus();
+                win.print();
+              })
+              .catch(function (err) {
+                if (statusEl) statusEl.textContent = err.message || "Receipt failed.";
               });
           });
         });
@@ -749,6 +1084,121 @@
               alert("Sellers cannot buy their own products.");
             }
           });
+        });
+      }
+
+      function bindListingCreate() {
+        const form = document.querySelector("form[data-listing-create]");
+        if (!form) return;
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          const submitBtn = form.querySelector("button[type=submit]");
+          const statusEl = form.querySelector("[data-tx-status]");
+          const originalText = submitBtn ? submitBtn.textContent : "";
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Publishing...";
+          }
+          if (statusEl) {
+            statusEl.textContent = "Preparing on-chain listing...";
+            statusEl.setAttribute("data-status", "pending");
+          }
+          ensureReady()
+            .then(function () {
+              const walletField = form.querySelector("#sellerWalletField");
+              if (walletField) {
+                walletField.value = state.account || "";
+              }
+              const formData = new FormData(form);
+              return fetch("/seller/listings", {
+                method: "POST",
+                headers: { "X-Prepare-Listing": "1" },
+                body: formData,
+              });
+            })
+            .then(function (res) {
+              if (!res.ok) {
+                throw new Error("Unable to prepare listing.");
+              }
+              return res.json();
+            })
+            .then(function (payload) {
+              if (!payload || !payload.ok || !payload.listing) {
+                throw new Error("Listing data missing.");
+              }
+              if (!state.listingContract) {
+                throw new Error("Listing contract not ready.");
+              }
+              const listing = payload.listing;
+              if (
+                state.account &&
+                listing.sellerWallet &&
+                state.account.toLowerCase() !== listing.sellerWallet.toLowerCase()
+              ) {
+                throw new Error("Switch MetaMask to the seller wallet before publishing.");
+              }
+              if (statusEl) {
+                statusEl.textContent = "Confirm in MetaMask...";
+              }
+              const priceWei = window.ethers.utils.parseEther(String(listing.priceEth || 0));
+              return state.listingContract
+                .createListing(
+                  listing.name,
+                  listing.category,
+                  listing.shortDesc,
+                  listing.shortDesc,
+                  listing.image,
+                  priceWei
+                )
+                .then(function (tx) { return tx.wait(); })
+                .then(function () {
+                  return state.listingContract.nextListingId();
+                })
+                .then(function (nextId) {
+                  const listingId = Number(nextId || 0) - 1;
+                  return fetch("/seller/listings", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Accept: "application/json",
+                      "X-Commit-Listing": "1",
+                    },
+                    body: JSON.stringify({
+                      listingId: listingId,
+                      name: listing.name,
+                      category: listing.category,
+                      shortDesc: listing.shortDesc,
+                      priceEth: listing.priceEth,
+                      sellerWallet: listing.sellerWallet,
+                      image: listing.image,
+                    }),
+                  });
+                });
+            })
+            .then(function (res) {
+              if (!res || !res.ok) {
+                return res && res.json
+                  ? res.json().then(function (data) {
+                      throw new Error(data.message || "Listing save failed.");
+                    })
+                  : Promise.reject(new Error("Listing save failed."));
+              }
+              if (statusEl) {
+                statusEl.textContent = "Listing published on-chain.";
+                statusEl.setAttribute("data-status", "ok");
+              }
+              window.location.href = "/";
+            })
+            .catch(function (err) {
+              if (statusEl) {
+                statusEl.textContent = normalizeWalletError(err);
+                statusEl.setAttribute("data-status", "error");
+              }
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+              }
+            });
         });
       }
 
@@ -774,7 +1224,9 @@
       bindSellerVerification();
       bindEscrowActions();
       bindReceiptVerification();
+      bindReceiptPrint();
       bindAddToCartGuard();
+      bindListingCreate();
       setSellerLockUI(false);
       setBuyerVerificationHint(false);
       restoreWalletSession().catch(function () {});
@@ -824,6 +1276,15 @@
               window.location.reload();
             }
           }
+        });
+        provider.on("chainChanged", function () {
+          if (!state.provider) return;
+          state.provider.getNetwork()
+            .then(function (network) {
+              state.chainId = network ? Number(network.chainId) : null;
+              setWalletUI(state.account);
+            })
+            .catch(function () {});
         });
       }
     })();
