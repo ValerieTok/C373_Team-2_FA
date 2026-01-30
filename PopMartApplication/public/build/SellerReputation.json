@@ -7072,12 +7072,12 @@
         }
       },
       "links": {},
-      "address": "0x320FC588df96aBE32c752462410421EA90B3Cf9F",
-      "transactionHash": "0x161c6fd080469abae7b68336572ed5ec80e55aa0a5409e04de5f11775c2c4645"
+      "address": "0xf04E3BFf80D13a5aF17877C7A1E11F8DC6d3B1BC",
+      "transactionHash": "0x2da7aeacefde3fb0c76a1eaa49688fb74f8d4db22ef3368c3a542fb1c7c67258"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2026-01-29T12:55:43.702Z",
+  "updatedAt": "2026-01-30T07:16:05.686Z",
   "networkType": "ethereum",
   "devdoc": {
     "kind": "dev",

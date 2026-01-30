@@ -22,6 +22,8 @@
       const checkoutForm = document.getElementById("checkoutForm");
       const buyerVerificationHint = document.getElementById("buyerVerificationHint");
       const sellerPageRoot = document.getElementById("sellerVerificationCard");
+      const buyerPageRoot = document.getElementById("buyerDashboardTag");
+      const buyerViewTag = document.getElementById("buyerViewTag");
       const buyerActionForm = document.querySelector(
         'form[data-escrow-action="deliver"], form[data-escrow-action="rate"]'
       );
@@ -42,6 +44,7 @@
         seller: "popmartSellerWallet",
         buyer: "popmartBuyerWallet",
       };
+      const LAST_ROLE_KEY = "popmartLastRole";
       const txLocks = {};
 
       function withTxLock(key, fn) {
@@ -61,7 +64,7 @@
       }
 
       function isBuyerPage() {
-        return Boolean(buyerActionForm);
+        return Boolean(buyerActionForm) || Boolean(buyerPageRoot) || Boolean(buyerViewTag);
       }
 
       function loadPreferredWallet(role) {
@@ -72,6 +75,30 @@
       function rememberWallet(role, address) {
         if (!window.localStorage || !address) return;
         window.localStorage.setItem(STORAGE_KEYS[role], address);
+        window.localStorage.setItem(LAST_ROLE_KEY, role);
+        const otherRole = role === "seller" ? "buyer" : "seller";
+        const otherValue = String(window.localStorage.getItem(STORAGE_KEYS[otherRole]) || "");
+        if (otherValue && otherValue.toLowerCase() === String(address).toLowerCase()) {
+          window.localStorage.removeItem(STORAGE_KEYS[otherRole]);
+        }
+      }
+
+      function getStoredRole(address) {
+        if (!window.localStorage || !address) return "";
+        const normalized = address.toLowerCase();
+        const storedSeller = String(window.localStorage.getItem(STORAGE_KEYS.seller) || "").toLowerCase();
+        const storedBuyer = String(window.localStorage.getItem(STORAGE_KEYS.buyer) || "").toLowerCase();
+        if (storedSeller && storedSeller === normalized) return "Seller";
+        if (storedBuyer && storedBuyer === normalized) return "Buyer";
+        return "";
+      }
+
+      function getLastRole() {
+        if (!window.localStorage) return "";
+        const lastRole = String(window.localStorage.getItem(LAST_ROLE_KEY) || "").toLowerCase();
+        if (lastRole === "seller") return "Seller";
+        if (lastRole === "buyer") return "Buyer";
+        return "";
       }
 
       function getRoleLabel(address) {
@@ -101,9 +128,14 @@
         );
         const isSeller = sellerWallets.has(account) || isSellerPage();
         const isBuyer = buyerWallets.has(account) || isBuyerPage() || Boolean(checkoutForm);
-        if (isSeller && isBuyer) return "Buyer/Seller";
+        if (sellerWallets.has(account)) return "Seller";
+        if (buyerWallets.has(account)) return "Buyer";
         if (isSeller) return "Seller";
         if (isBuyer) return "Buyer";
+        const storedRole = getStoredRole(account);
+        if (storedRole) return storedRole;
+        const lastRole = getLastRole();
+        if (lastRole) return lastRole;
         return "";
       }
 
@@ -369,7 +401,6 @@
           const network = await state.provider.getNetwork().catch(function () { return null; });
           state.chainId = network ? Number(network.chainId) : null;
         }
-        setWalletUI(state.account);
         if (state.account) {
           if (isSellerPage()) {
             rememberWallet("seller", state.account);
@@ -377,6 +408,7 @@
             rememberWallet("buyer", state.account);
           }
         }
+        setWalletUI(state.account);
         if (!state.escrowContract) {
           await initContracts();
         }
@@ -411,7 +443,6 @@
           const network = await state.provider.getNetwork().catch(function () { return null; });
           state.chainId = network ? Number(network.chainId) : null;
         }
-        setWalletUI(state.account);
         if (state.account) {
           if (isSellerPage()) {
             rememberWallet("seller", state.account);
@@ -419,6 +450,7 @@
             rememberWallet("buyer", state.account);
           }
         }
+        setWalletUI(state.account);
         if (!state.escrowContract) {
           await initContracts();
         }
@@ -1283,20 +1315,28 @@
         provider.on("accountsChanged", function (accounts) {
           const account = accounts && accounts.length ? accounts[0] : "";
           state.account = account || null;
-          setWalletUI(account);
           state.verification = { seller: false, buyer: false };
           fetchVerificationStatus(account).catch(function () {});
           if (isSellerPage()) {
             if (account) {
               rememberWallet("seller", account);
+              setWalletUI(account);
               syncSellerWallet(account)
                 .catch(function () {})
                 .finally(function () {
                   window.location.reload();
                 });
             } else {
+              setWalletUI(account);
               window.location.reload();
             }
+          } else if (isBuyerPage() || checkoutForm) {
+            if (account) {
+              rememberWallet("buyer", account);
+            }
+            setWalletUI(account);
+          } else {
+            setWalletUI(account);
           }
         });
         provider.on("chainChanged", function () {
