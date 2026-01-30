@@ -220,16 +220,23 @@
           return null;
         });
         const direct = networks[chainId];
-        if (direct && direct.address) {
-          return { address: direct.address, chainId, networkId, usedNetworkKey: chainId };
-        }
-        if (networkId && networks[networkId] && networks[networkId].address) {
+        const byNetworkId = networkId ? networks[networkId] : null;
+        if (
+          byNetworkId &&
+          byNetworkId.address &&
+          (!direct ||
+            !direct.address ||
+            String(direct.address).toLowerCase() !== String(byNetworkId.address).toLowerCase())
+        ) {
           return {
-            address: networks[networkId].address,
+            address: byNetworkId.address,
             chainId,
             networkId,
             usedNetworkKey: String(networkId),
           };
+        }
+        if (direct && direct.address) {
+          return { address: direct.address, chainId, networkId, usedNetworkKey: chainId };
         }
         const keys = Object.keys(networks);
         if (keys.length === 1 && networks[keys[0]].address) {
