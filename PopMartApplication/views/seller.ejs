@@ -117,28 +117,33 @@
                 Payment released: <span class="mono"><%= order.releasedAtDisplay %></span>
               </div>
             </div>
-            <form action="/seller/orders/<%= order.id %>/ship" method="POST" data-escrow-action="ship" data-escrow-order-id="<%= order.escrowOrderId || '' %>" data-expected-wallet="<%= order.sellerWallet || '' %>">
-              <button
-                class="btn btn-alt"
-                type="submit"
-                <%= order.status !== "Awaiting Shipment" ? "disabled" : "" %>
-                style="<%= order.status !== 'Awaiting Shipment' ? 'background:#e2e8f0; border-color:#e2e8f0; color:#475569;' : '' %><%= order.status === 'Shipped' ? 'background:#16a34a; border-color:#16a34a; color:#f8fafc;' : '' %>"
-              >
-                <%= order.status === "Awaiting Shipment" ? "Confirm shipment" : "Shipment confirmed" %>
-              </button>
-              <span class="muted status-text" data-tx-status style="margin-left:8px;"></span>
-            </form>
-            <% if (order.status === "Shipped" || order.status === "Delivered") { %>
+            <% if (order.status === "Awaiting Shipment" || order.status === "Shipped" || order.status === "Delivered") { %>
               <div style="margin-top:10px; padding:10px 12px; border:1px dashed #e2e8f0; border-radius:12px;">
-                <strong>Verify receipt + upload shipment proof</strong>
+                <strong>Print receipt → verify receipt → upload shipment proof</strong>
                 <p class="muted" style="margin:6px 0 0;">
-                  Verify the on-chain receipt before uploading shipment proof.
+                  Complete these steps before confirming shipment.
                 </p>
                 <div style="margin-top:8px;">
                   <div class="muted">Order hash: <span class="mono"><%= order.orderHash || "Pending" %></span></div>
                   <% if (order.notarizeTxHash) { %>
                     <div class="muted">Notarize tx: <span class="mono"><%= order.notarizeTxHash %></span></div>
                   <% } %>
+                  <button
+                    class="btn btn-ghost"
+                    type="button"
+                    data-receipt-print
+                    data-receipt-type="shipment"
+                    data-order-id="<%= order.escrowOrderId || '' %>"
+                    <%= order.escrowOrderId ? "" : "disabled" %>
+                    data-seller-wallet="<%= order.sellerWallet || '' %>"
+                    data-buyer-wallet="<%= order.buyerWallet || '' %>"
+                    data-product-name="<%= order.productName || '' %>"
+                    data-qty="<%= order.qty %>"
+                    data-price-eth="<%= order.priceEth %>"
+                    data-shipped-at="<%= order.shippedAtDisplay %>"
+                  >
+                    Print receipt
+                  </button>
                   <button
                     class="btn btn-outline"
                     type="button"
@@ -156,28 +161,12 @@
                   >
                     Verify receipt
                   </button>
-                  <button
-                    class="btn btn-ghost"
-                    type="button"
-                    data-receipt-print
-                    data-receipt-type="shipment"
-                    data-order-id="<%= order.escrowOrderId || '' %>"
-                    <%= order.escrowOrderId ? "" : "disabled" %>
-                    data-seller-wallet="<%= order.sellerWallet || '' %>"
-                    data-buyer-wallet="<%= order.buyerWallet || '' %>"
-                    data-product-name="<%= order.productName || '' %>"
-                    data-qty="<%= order.qty %>"
-                    data-price-eth="<%= order.priceEth %>"
-                    data-shipped-at="<%= order.shippedAtDisplay %>"
-                  >
-                    Print receipt
-                  </button>
                   <span class="muted status-text" data-verify-status style="margin-left:6px;"></span>
                   <span class="muted status-text" data-verify-timestamp style="margin-left:6px;"></span>
                 </div>
                 <% if (order.shipmentProofFile) { %>
                   <a class="btn btn-ghost" style="margin-top:8px;" href="<%= order.shipmentProofFile %>" target="_blank" rel="noopener">
-                    View shipment proof
+                    View receipt
                   </a>
                 <% } else { %>
                   <form
@@ -203,6 +192,23 @@
                   </form>
                 <% } %>
               </div>
+            <% } %>
+            <% if (order.status === "Awaiting Shipment" || order.status === "Shipped" || order.status === "Delivered") { %>
+              <% const canConfirmShipment = order.status === "Awaiting Shipment" && order.shipmentProofFile; %>
+              <form action="/seller/orders/<%= order.id %>/ship" method="POST" data-escrow-action="ship" data-escrow-order-id="<%= order.escrowOrderId || '' %>" data-expected-wallet="<%= order.sellerWallet || '' %>" data-proof-uploaded="<%= order.shipmentProofFile ? 'true' : '' %>">
+                <button
+                  class="btn btn-alt"
+                  type="submit"
+                  <%= !canConfirmShipment ? "disabled" : "" %>
+                  style="<%= !canConfirmShipment ? 'background:#e2e8f0; border-color:#e2e8f0; color:#475569;' : '' %><%= order.status === 'Shipped' ? 'background:#16a34a; border-color:#16a34a; color:#f8fafc;' : '' %>"
+                >
+                  <%= order.status === "Awaiting Shipment" ? "Confirm shipment" : "Shipment confirmed" %>
+                </button>
+                <span class="muted status-text" data-tx-status style="margin-left:8px;"></span>
+                <% if (!canConfirmShipment && order.status === "Awaiting Shipment") { %>
+                  <div class="muted" style="margin-top:6px;">Verify the receipt and upload shipment proof to enable confirmation.</div>
+                <% } %>
+              </form>
             <% } %>
             <% if (order.status === "Delivered") { %>
               <div style="margin-top:10px; padding:10px 12px; border:1px dashed #e2e8f0; border-radius:12px;">

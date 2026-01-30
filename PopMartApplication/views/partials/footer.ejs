@@ -743,11 +743,21 @@
           if (!verification.seller) {
             throw new Error("Seller not verified. Verify with MetaMask first.");
           }
+          const proofUploaded = String(form.dataset.proofUploaded || "") === "true";
+          if (!proofUploaded) {
+            throw new Error("Upload shipment proof first.");
+          }
         }
         const lockKey = "escrow-" + action + "-" + escrowOrderId;
         await withTxLock(lockKey, async function () {
           if (action === "ship") {
             try {
+              await ensureNotarizationReady();
+              const receipt = await state.notarizationContract.verifyShipment(escrowOrderId);
+              const timestamp = receipt && receipt.timestamp ? receipt.timestamp : receipt[1];
+              if (!timestamp || Number(timestamp) === 0) {
+                throw new Error("Verify Reciept first");
+              }
               await (await state.deliveryTracking.advanceToDelivered(escrowOrderId, "")).wait();
             } catch (err) {
               const reason = normalizeRpcError(err);

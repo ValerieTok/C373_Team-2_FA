@@ -733,6 +733,12 @@ app.post("/seller/orders/:id/ship", (req, res) => {
     }
     return res.status(403).send("Seller wallet mismatch.");
   }
+  if (!order.shipmentProofFile) {
+    if (req.is("application/json")) {
+      return res.status(400).json({ ok: false, message: "Upload shipment proof first." });
+    }
+    return res.status(400).send("Upload shipment proof first.");
+  }
   if (!req.is("application/json")) {
     return res.status(400).send("On-chain shipment confirmation required.");
   }
@@ -758,8 +764,12 @@ app.post("/seller/orders/:id/proof-shipped", uploadProof.single("proofFile"), (r
   if (!order || !orderWallet || !sessionWallet || orderWallet !== sessionWallet) {
     return res.status(403).send("Seller wallet mismatch.");
   }
-  if (order.status !== "Shipped" && order.status !== "Delivered") {
-    return res.status(400).send("Order is not marked as shipped yet.");
+  if (
+    order.status !== "Awaiting Shipment" &&
+    order.status !== "Shipped" &&
+    order.status !== "Delivered"
+  ) {
+    return res.status(400).send("Order is not ready for shipment proof.");
   }
   if (!order.orderHash) {
     return res.status(400).send("Receipt not verified for this order.");
