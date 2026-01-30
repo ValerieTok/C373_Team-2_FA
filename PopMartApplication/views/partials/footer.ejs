@@ -727,6 +727,8 @@
         const action = form.dataset.escrowAction;
         const escrowOrderId = form.dataset.escrowOrderId;
         const expectedWallet = (form.dataset.expectedWallet || "").toLowerCase();
+        const statusEl = form.querySelector("[data-tx-status]");
+        if (statusEl) statusEl.textContent = "";
         if (!escrowOrderId) {
           throw new Error("Escrow order ID missing.");
         }
@@ -753,6 +755,12 @@
             }
           } else if (action === "deliver") {
             try {
+              await ensureNotarizationReady();
+              const receipt = await state.notarizationContract.verifyDelivery(escrowOrderId);
+              const timestamp = receipt && receipt.timestamp ? receipt.timestamp : receipt[1];
+              if (!timestamp || Number(timestamp) === 0) {
+                throw new Error("Verify Reciept first");
+              }
               if (state.escrowContract) {
                 await (await state.escrowContract.confirmAndRelease(escrowOrderId)).wait();
               }
@@ -873,14 +881,23 @@
           form.addEventListener("submit", function (event) {
             event.preventDefault();
             const submitBtn = form.querySelector("button[type=submit]");
+            const statusEl = form.querySelector("[data-tx-status]");
             const originalText = submitBtn ? submitBtn.textContent : "";
+            if (statusEl) statusEl.textContent = "";
             if (submitBtn) {
               submitBtn.disabled = true;
               submitBtn.textContent = "Processing...";
             }
             ensureReady()
               .then(function () { return handleEscrowAction(form); })
-              .catch(function (err) { alert(normalizeWalletError(err)); })
+              .catch(function (err) {
+                const message = normalizeWalletError(err);
+                if (statusEl) {
+                  statusEl.textContent = message;
+                  return;
+                }
+                alert(message);
+              })
               .finally(function () {
                 if (submitBtn) {
                   submitBtn.disabled = false;

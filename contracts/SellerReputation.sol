@@ -20,6 +20,14 @@ contract SellerReputation {
     mapping(uint256 => ListingRating) public listingRatings;
     mapping(uint256 => bool) public ratedOrder;
 
+    event OrderRated(
+        uint256 indexed orderId,
+        uint256 indexed listingId,
+        address indexed buyer,
+        address seller,
+        uint8 rating
+    );
+
     constructor(address orderRegistryAddress) {
         orderRegistry = OrderRegistry(orderRegistryAddress);
     }
@@ -48,6 +56,8 @@ contract SellerReputation {
 
         listingRatings[listingId].sumRatings =
             listingRatings[listingId].sumRatings + rating;
+
+        emit OrderRated(orderId, listingId, msg.sender, seller, rating);
     }
 
     function getAverageRating(address seller) external view returns (uint256) {

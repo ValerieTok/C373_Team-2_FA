@@ -26,6 +26,18 @@ contract Notarization {
         _;
     }
 
+    modifier onlySeller(uint256 orderId) {
+        address seller = orderRegistry.getSeller(orderId);
+        require(msg.sender == seller, "Only seller can notarize shipment");
+        _;
+    }
+
+    modifier onlyBuyer(uint256 orderId) {
+        address buyer = orderRegistry.getBuyer(orderId);
+        require(msg.sender == buyer, "Only buyer can notarize delivery");
+        _;
+    }
+
     constructor(address orderRegistryAddress) {
         require(orderRegistryAddress != address(0), "OrderRegistry required");
         orderRegistry = OrderRegistry(orderRegistryAddress);
@@ -38,14 +50,14 @@ contract Notarization {
         emit PurchaseNotarized(orderId, hash, block.timestamp);
     }
 
-    function notarizeShipment(uint256 orderId, bytes32 hash) external onlySellerOrBuyer(orderId) {
+    function notarizeShipment(uint256 orderId, bytes32 hash) external onlySeller(orderId) {
         require(hash != bytes32(0), "Invalid hash");
         require(shipmentNotarized[orderId].timestamp == 0, "Already notarized");
         shipmentNotarized[orderId] = Record(hash, block.timestamp);
         emit ShipmentNotarized(orderId, hash, block.timestamp);
     }
 
-    function notarizeDelivery(uint256 orderId, bytes32 hash) external onlySellerOrBuyer(orderId) {
+    function notarizeDelivery(uint256 orderId, bytes32 hash) external onlyBuyer(orderId) {
         require(hash != bytes32(0), "Invalid hash");
         require(deliveryNotarized[orderId].timestamp == 0, "Already notarized");
         deliveryNotarized[orderId] = Record(hash, block.timestamp);
